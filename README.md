@@ -40,9 +40,10 @@ Nesse modo os leads ficam só naquele navegador (localStorage). Use **Exportar b
 - Botão de WhatsApp que abre a conversa com o gancho já escrito
 - Barra de calor (quente/morno/frio), sinal de oportunidade e gancho copiável
 - Follow-up com alerta de atraso, busca, filtros, anotações, importação e backup em JSON (o backup guarda etapa, histórico e anotações)
-- Pensado também para o celular: a varredura recolhe e os leads aparecem primeiro
+- Atalhos no topo que filtram na hora (para contatar hoje, quentes, sem contato, propostas, fechados)
+- Varredura numa gaveta lateral (tela cheia no celular); a lista de leads vem sempre primeiro
 - Funciona offline (exceto a varredura, que precisa de internet)
 
-> Mantenha a pasta `img/` junto do `prospector-agro.html` (é a foto do topo).
+> Mantenha as pastas `img/` e `fonts/` junto do `prospector-agro.html` (ícone e fonte Public Sans, licença OFL em `fonts/`).
 
-Foto do topo: [Pexels — High-Tech Drone Spraying Crops in Field](https://www.pexels.com/photo/high-tech-drone-spraying-crops-in-field-34182370/) (licença Pexels, uso livre).
+Ícone do topo recortado da foto [Pexels — High-Tech Drone Spraying Crops in Field](https://www.pexels.com/photo/high-tech-drone-spraying-crops-in-field-34182370/) (licença Pexels, uso livre).

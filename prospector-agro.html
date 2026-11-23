@@ -2,501 +2,370 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Prospector Agro — painel de prospecção</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#F5F4EF">
+<meta name="robots" content="noindex, nofollow">
+<title>Prospector Agro</title>
+<link rel="preload" href="fonts/public-sans-latin-400-normal.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/public-sans-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+  @font-face{font-family:"Public Sans";font-weight:400;font-display:swap;src:url(fonts/public-sans-latin-400-normal.woff2) format("woff2")}
+  @font-face{font-family:"Public Sans";font-weight:500;font-display:swap;src:url(fonts/public-sans-latin-500-normal.woff2) format("woff2")}
+  @font-face{font-family:"Public Sans";font-weight:600;font-display:swap;src:url(fonts/public-sans-latin-600-normal.woff2) format("woff2")}
+  @font-face{font-family:"Public Sans";font-weight:700;font-display:swap;src:url(fonts/public-sans-latin-700-normal.woff2) format("woff2")}
+
+  /* Sistema: um verde de ação, cinzas quentes, Public Sans.
+     Cantos: controles 6px, painéis 10px, etiquetas em pílula. */
   :root{
-    --paper:#F6F7F2;
-    --card:#FFFFFF;
-    --ink:#20301F;
-    --ink-soft:#55614F;
-    --line:#DDE2D4;
-    --field:#2F6B3C;
-    --field-deep:#1F4A28;
-    --soil:#8A6240;
-    --quente:#C23A12;
-    --morno:#C98A12;
-    --frio:#6E7F88;
-    --ok:#2F6B3C;
-    --radius:10px;
-    --font-display:"Bahnschrift","Segoe UI Semibold",system-ui,sans-serif;
-    --font-body:"Segoe UI",system-ui,sans-serif;
-    --hero-foto:url("img/hero.webp");
-    --sombra:0 1px 3px rgba(32,48,31,.07);
+    --bg:#F5F4EF;
+    --surface:#FFFFFF;
+    --surface-2:#FAF9F5;
+    --ink:#1E261D;
+    --muted:#5F655A;
+    --faint:#8A8E84;
+    --line:#E4E2D9;
+    --line-strong:#CFCCC1;
+    --accent:#2D6A3E;
+    --accent-hover:#245834;
+    --accent-soft:#E8F0E6;
+    --quente:#B2441A;
+    --morno:#9A6B0C;
+    --frio:#6C726A;
+    --perigo:#A3361C;
+    --r-ctl:6px;
+    --r-box:10px;
+    --font:"Public Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+    --hero-foto:url("img/selo.webp");
   }
   *{box-sizing:border-box;margin:0;padding:0}
   [hidden]{display:none!important}
-  html{scroll-behavior:smooth}
-  @media (prefers-reduced-motion: reduce){
-    html{scroll-behavior:auto}
-    *,*::before,*::after{animation:none!important;transition:none!important}
-  }
-  body{
-    background:var(--paper);
-    color:var(--ink);
-    font-family:var(--font-body);
-    font-size:15px;
-    line-height:1.5;
-    min-height:100vh;
-  }
-  button{font-family:inherit;cursor:pointer}
-  input,select,textarea{font-family:inherit;font-size:14px;color:var(--ink)}
-  :focus-visible{outline:3px solid var(--field);outline-offset:2px;border-radius:4px}
+  html{-webkit-text-size-adjust:100%}
+  @media (prefers-reduced-motion: reduce){ *,*::before,*::after{animation:none!important;transition:none!important} }
+  body{background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;padding-bottom:env(safe-area-inset-bottom)}
+  button{font:inherit;color:inherit;cursor:pointer;background:none;border:0}
+  input,select,textarea{font:inherit;font-size:15px;color:var(--ink)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  ::selection{background:#CFE2CB}
+  .num{font-variant-numeric:tabular-nums}
 
-  /* ---------- tela de carregamento ---------- */
-  #splash{
-    position:fixed;inset:0;z-index:200;overflow:hidden;
-    background:
-      radial-gradient(ellipse 120% 60% at 50% 108%, rgba(84,122,62,.55) 0%, rgba(84,122,62,0) 60%),
-      radial-gradient(circle at 50% 30%, #2C5936 0%, #1A3A21 62%, #122A17 100%);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    color:#F2F5EC;transition:opacity .5s ease;
-  }
-  #splash.sair{opacity:0;pointer-events:none}
-  #splash.sair .splash-cena{animation:none;transform:translateY(-46vh);transition:transform .6s cubic-bezier(.5,0,.9,.6)}
-  .splash-cena{animation:flutuar 2.8s ease-in-out infinite;margin-bottom:6px}
-  @keyframes flutuar{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
-  .splash-cena .rotor{transform-origin:center;transform-box:fill-box;animation:girar .4s linear infinite}
-  @keyframes girar{0%,100%{transform:scaleX(1);opacity:.95}50%{transform:scaleX(.15);opacity:.55}}
-  .splash-cena .gota{transform-box:fill-box;animation:cair 1.15s linear infinite}
-  .splash-cena .gota.g2{animation-delay:.38s}
-  .splash-cena .gota.g3{animation-delay:.76s}
-  @keyframes cair{0%{transform:translateY(0);opacity:0}12%{opacity:.75}100%{transform:translateY(26px);opacity:0}}
-  .splash-cena .nevoa{transform-box:fill-box;animation:nevoar 2.3s ease-in-out infinite}
-  @keyframes nevoar{0%,100%{opacity:.16}50%{opacity:.34}}
-  #sombraDrone{transform-origin:center;transform-box:fill-box;animation:sombrear 2.8s ease-in-out infinite}
-  @keyframes sombrear{0%,100%{transform:scaleX(1);opacity:.28}50%{transform:scaleX(.82);opacity:.17}}
-  .splash-nome{
-    font-family:var(--font-display);font-size:34px;font-weight:600;letter-spacing:.5px;
-    animation:surgir .7s ease .15s backwards;
-  }
-  .splash-sub{font-size:14px;color:#AFC6A3;margin-top:4px;animation:surgir .7s ease .4s backwards}
-  @keyframes surgir{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-  .splash-barra{
-    width:168px;height:3px;border-radius:99px;margin-top:22px;overflow:hidden;
-    background:rgba(242,245,236,.14);animation:surgir .7s ease .55s backwards;
-  }
-  .splash-barra i{
-    display:block;width:44%;height:100%;border-radius:99px;
-    background:linear-gradient(90deg, transparent, #CDE3BF 45%, #CDE3BF 55%, transparent);
-    animation:varrer 1.25s ease-in-out infinite;
-  }
-  @keyframes varrer{0%{transform:translateX(-110%)}100%{transform:translateX(360%)}}
-  @media (prefers-reduced-motion: reduce){
-    .splash-barra{display:none}
-  }
+  /* ---------- controles ---------- */
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 14px;border-radius:var(--r-ctl);
+    font-size:14px;font-weight:600;white-space:nowrap;border:1px solid transparent;transition:background-color .12s,border-color .12s}
+  .btn svg{width:16px;height:16px;flex:none}
+  .btn.primario{background:var(--accent);color:#fff}
+  .btn.primario:hover{background:var(--accent-hover)}
+  .btn.secundario{background:var(--surface);border-color:var(--line-strong)}
+  .btn.secundario:hover{background:var(--surface-2);border-color:var(--faint)}
+  .btn.fantasma{color:var(--muted)}
+  .btn.fantasma:hover{background:#ECEAE2;color:var(--ink)}
+  .btn.perigo{color:var(--perigo)}
+  .btn.perigo:hover{background:#F8ECE7}
+  .btn.mini{height:30px;padding:0 10px;font-size:13px}
+  .btn.icone{width:36px;padding:0}
+  .btn:disabled{opacity:.5;cursor:default}
+  .campo-ctl,select.campo-ctl,input.campo-ctl{height:36px;padding:0 10px;border:1px solid var(--line-strong);border-radius:var(--r-ctl);background:var(--surface);min-width:0}
+  select.campo-ctl{padding-right:28px;appearance:none;-webkit-appearance:none;
+    background:var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%235F655A' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat right 10px center}
+  .campo-ctl:hover{border-color:var(--faint)}
+  textarea.campo-ctl{height:auto;padding:8px 10px;resize:vertical;line-height:1.45}
 
-  /* ---------- topo (hero) ---------- */
-  header{
-    position:relative;
-    color:#F2F5EC;
-    padding:22px 28px;
-    min-height:232px;
-    display:flex;align-items:flex-end;gap:16px;flex-wrap:wrap;
-    background-image:
-      linear-gradient(180deg, rgba(17,32,19,.30) 0%, rgba(17,32,19,.42) 55%, rgba(17,32,19,.82) 100%),
-      var(--hero-foto);
-    background-size:cover;
-    background-position:center 38%;
-  }
-  @media (max-width:900px){ header{min-height:190px} }
-  .logo{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-  .logo h1{
-    font-family:var(--font-display);font-size:30px;font-weight:600;letter-spacing:.3px;
-    text-shadow:0 1px 10px rgba(0,0,0,.45);
-  }
-  .logo span{font-size:13px;color:#DCE8D2;text-shadow:0 1px 6px rgba(0,0,0,.5)}
-  header .acoes{margin-left:auto;display:flex;gap:10px}
-  .btn{
-    border:1px solid transparent;border-radius:8px;
-    padding:8px 14px;font-size:14px;font-weight:600;
-    background:var(--field);color:#fff;
-  }
-  .btn:hover{background:#3B8049}
-  .btn.claro{background:rgba(17,32,19,.38);border-color:rgba(255,255,255,.45);color:#F2F5EC;backdrop-filter:blur(3px)}
-  .btn.claro:hover{background:rgba(17,32,19,.6)}
-  .btn.neutro{background:#EDEFE6;color:var(--ink);border-color:var(--line)}
-  .btn.neutro:hover{background:#E2E6D8}
-  .btn.perigo{background:transparent;color:#A33B1E;border-color:#E0C2B5}
-  .btn.perigo:hover{background:#FBEFE9}
-  .btn.mini{padding:4px 10px;font-size:13px}
+  /* ---------- barra do topo ---------- */
+  .topo{position:sticky;top:0;z-index:30;background:rgba(245,244,239,.92);backdrop-filter:saturate(1.4) blur(8px);-webkit-backdrop-filter:saturate(1.4) blur(8px);border-bottom:1px solid var(--line)}
+  .topo-in{max-width:1240px;margin:0 auto;padding:10px 24px;padding-top:calc(10px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px}
+  .marca{display:flex;align-items:center;gap:10px;min-width:0}
+  .marca .selo{width:32px;height:32px;border-radius:8px;flex:none;background:var(--hero-foto) center/cover;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+  .marca b{font-size:16px;font-weight:700;letter-spacing:-.01em;white-space:nowrap}
+  .nuvem{font-size:12px;color:var(--faint);display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .nuvem::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--line-strong)}
+  .nuvem.ok::before{background:#4E9A5E}
+  .nuvem.erro{color:var(--perigo)}.nuvem.erro::before{background:var(--perigo)}
+  .nuvem:empty{display:none}
+  .topo .acoes{margin-left:auto;display:flex;align-items:center;gap:8px}
 
-  /* ---------- números do funil ---------- */
-  .painel-numeros{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-    background:var(--card);border-bottom:1px solid var(--line);
-  }
-  .numero{background:var(--card);padding:14px 22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);margin-bottom:-1px}
-  .numero b{font-family:var(--font-display);font-size:30px;font-weight:600;display:block;line-height:1.1}
-  .numero small{color:var(--ink-soft);font-size:13px}
-  .numero.alerta b{color:var(--quente)}
+  /* menu ⋯ */
+  .menu{position:relative}
+  .menu > summary{list-style:none}
+  .menu > summary::-webkit-details-marker{display:none}
+  .menu-lista{position:absolute;right:0;top:calc(100% + 6px);z-index:40;min-width:200px;background:var(--surface);border:1px solid var(--line);
+    border-radius:var(--r-box);box-shadow:0 10px 30px -12px rgba(30,38,29,.28),0 2px 6px rgba(30,38,29,.06);padding:4px;display:flex;flex-direction:column}
+  .menu-lista button{display:flex;align-items:center;gap:10px;text-align:left;padding:9px 10px;border-radius:var(--r-ctl);font-size:14px}
+  .menu-lista button:hover{background:var(--surface-2)}
+  .menu-lista button.perigo{color:var(--perigo)}
+  .menu-lista svg{width:16px;height:16px;color:var(--muted)}
+  .menu-lista hr{border:0;border-top:1px solid var(--line);margin:4px 0}
 
-  /* ---------- corpo ---------- */
-  .corpo{
-    display:grid;grid-template-columns:330px 1fr;gap:24px;
-    padding:24px 28px;max-width:1400px;margin:0 auto;
-  }
-  @media (max-width: 900px){ .corpo{grid-template-columns:1fr} }
+  /* ---------- página ---------- */
+  .pagina{max-width:1240px;margin:0 auto;padding:20px 24px 48px}
+  .cabecalho{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:14px}
+  .cabecalho h1{font-size:22px;font-weight:700;letter-spacing:-.015em;line-height:1.2}
+  .cabecalho p{color:var(--muted);font-size:14px;margin-top:2px}
 
-  .cartao{
-    background:var(--card);border:1px solid var(--line);
-    border-radius:var(--radius);padding:20px;box-shadow:var(--sombra);
-  }
-  .cartao h2{
-    font-family:var(--font-display);font-size:18px;font-weight:600;
-    margin-bottom:4px;
-  }
-  .cartao .sub{color:var(--ink-soft);font-size:13px;margin-bottom:16px}
+  /* atalhos do dia (filtros rápidos com contagem) */
+  .resumo{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-bottom:14px;padding:1px}
+  .resumo::-webkit-scrollbar{display:none}
+  .atalho{flex:none;display:inline-flex;align-items:center;gap:8px;height:34px;padding:0 12px;border-radius:999px;border:1px solid var(--line-strong);background:var(--surface);font-size:13px;font-weight:500;color:var(--muted)}
+  .atalho b{font-weight:700;color:var(--ink)}
+  .atalho:hover{border-color:var(--faint)}
+  .atalho[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#E9ECE4}
+  .atalho[aria-pressed="true"] b{color:#fff}
+  .atalho.alerta b{color:var(--quente)}
+  .atalho.alerta[aria-pressed="true"] b{color:#FFB79A}
 
-  /* ---------- configurador de varredura ---------- */
-  .campo{margin-bottom:14px}
-  .campo label{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
-  .campo select,.campo input[type=text],.campo input[type=number],.campo input[type=date],.campo textarea{
-    width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff;
-  }
-  .caixinhas{display:flex;flex-direction:column;gap:7px}
-  .caixinhas label{
-    display:flex;align-items:flex-start;gap:9px;font-weight:400;font-size:14px;
-    padding:8px 10px;border:1px solid var(--line);border-radius:7px;cursor:pointer;
-  }
-  .caixinhas label:hover{border-color:var(--field)}
-  .caixinhas input{margin-top:3px;accent-color:var(--field)}
-  .caixinhas small{display:block;color:var(--ink-soft);font-size:12px}
-  .status-varredura{
-    display:none;margin-top:12px;padding:10px 12px;border-radius:8px;
-    background:#F2F5EC;border:1px solid var(--line);font-size:13px;
-    align-items:center;gap:10px;justify-content:space-between;
-  }
+  /* barra de ferramentas */
+  .ferramentas{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .visao{display:inline-flex;padding:3px;border-radius:8px;background:#E9E7DF;flex:none}
+  .visao button{height:30px;padding:0 12px;border-radius:var(--r-ctl);font-size:13px;font-weight:600;color:var(--muted)}
+  .visao button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(30,38,29,.12)}
+  .busca{position:relative;flex:1;min-width:200px}
+  .busca svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:var(--faint);pointer-events:none}
+  .busca input{width:100%;padding-left:32px}
+  .ferramentas select{flex:none}
+  .filtros-sel{display:contents}
+
+  /* faixa da varredura em andamento */
+  .status-varredura{display:none;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px;padding:10px 14px;border-radius:var(--r-box);background:var(--accent-soft);border:1px solid #CFE0CB;font-size:14px}
   .status-varredura.ativa{display:flex}
-  .status-varredura #statusTexto{flex:1}
+  .status-varredura #statusTexto{flex:1;min-width:200px}
+  .status-varredura .tempo{color:var(--muted)}
+  .pulso{width:8px;height:8px;border-radius:50%;background:var(--accent);flex:none;animation:pulso 1.4s ease-in-out infinite}
+  @keyframes pulso{50%{opacity:.25}}
 
-  /* ---------- filtros ---------- */
-  .filtros{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px;align-items:center}
-  .filtros input[type=search]{flex:1;min-width:180px;padding:8px 12px;border:1px solid var(--line);border-radius:7px}
-  .filtros select{padding:8px 10px;border:1px solid var(--line);border-radius:7px;background:#fff}
+  /* ---------- leads ---------- */
+  .lista-leads{display:flex;flex-direction:column;gap:10px}
+  .lead{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-box);padding:16px 18px}
+  .lead.fechado{background:#F6FAF4}
+  .lead.perdido{opacity:.6}
+  .lead.destaque{outline:2px solid var(--accent);outline-offset:2px}
+  .lead-cab{display:flex;align-items:flex-start;gap:16px}
+  .lead-titulo{flex:1;min-width:0}
+  .lead-titulo h3{font-size:16px;font-weight:600;line-height:1.3;letter-spacing:-.005em}
+  .lead-sub{font-size:13px;color:var(--muted);margin-top:2px}
+  .lead-fu{margin-top:6px}
+  .lead-sub .sep{color:var(--line-strong);margin:0 6px}
+  .calor{flex:none;text-align:right;min-width:72px}
+  .calor b{font-size:20px;font-weight:700;line-height:1;letter-spacing:-.02em}
+  .calor span{display:block;font-size:12px;font-weight:600;margin-top:3px}
+  .calor i{display:block;height:3px;border-radius:2px;background:var(--line);margin-top:6px;overflow:hidden}
+  .calor i::after{content:"";display:block;height:100%;width:var(--v);background:currentColor}
+  .calor.q{color:var(--quente)} .calor.m{color:var(--morno)} .calor.f{color:var(--frio)}
+  .calor b,.calor span{color:inherit}
 
-  /* ---------- lead ---------- */
-  .lista-leads{display:flex;flex-direction:column;gap:14px}
-  .lead{
-    background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
-    padding:18px 20px;box-shadow:var(--sombra);
-  }
-  .lead.fechado{border-color:#BCD4BE;background:#F4F9F3}
-  .lead.perdido{opacity:.62}
-  .lead-topo{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap}
-  .lead-topo h3{font-family:var(--font-display);font-size:19px;font-weight:600;flex:1;min-width:180px}
-  .chip{
-    font-size:12px;font-weight:600;padding:3px 9px;border-radius:99px;white-space:nowrap;
-  }
-  .chip.produtor{background:#E4EFE2;color:var(--field-deep)}
-  .chip.revenda{background:#EFE8DC;color:var(--soil)}
-  .chip.consultoria{background:#E2EBF1;color:#3A617C}
-  .chip.usina{background:#EEE3EF;color:#6D3A78}
+  .lead-info{display:grid;grid-template-columns:112px 1fr;gap:6px 14px;font-size:14px;margin-top:12px}
+  .lead-info dt{color:var(--muted);font-size:13px;padding-top:1px}
+  .lead-info dd{min-width:0;overflow-wrap:anywhere}
+  .confirmado{color:var(--accent);font-weight:600;font-size:12px}
+  .provavel{color:var(--morno);font-weight:600;font-size:12px}
+  .a-descobrir{color:var(--faint)}
+  .links{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+  .links a{font-size:12px;color:var(--accent);text-decoration:none;border-bottom:1px solid #BFD5BA;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .links a:hover{border-bottom-color:var(--accent)}
 
-  /* barra de calor — o medidor da varredura */
-  .calor{display:flex;align-items:center;gap:10px;margin:10px 0 12px;max-width:420px}
-  .calor .trilha{
-    flex:1;height:10px;border-radius:99px;background:#ECEEE5;overflow:hidden;
-    border:1px solid var(--line);
-  }
-  .calor .nivel{height:100%;border-radius:99px}
-  .calor .valor{font-family:var(--font-display);font-size:16px;font-weight:600;min-width:84px}
-  .calor.q .nivel{background:linear-gradient(90deg,#D8812F,var(--quente))}
-  .calor.q .valor{color:var(--quente)}
-  .calor.m .nivel{background:linear-gradient(90deg,#D3B153,var(--morno))}
-  .calor.m .valor{color:var(--morno)}
-  .calor.f .nivel{background:var(--frio)}
-  .calor.f .valor{color:var(--frio)}
+  .gancho{margin-top:12px;padding:10px 12px;border-radius:var(--r-ctl);background:var(--surface-2);border:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+  .gancho p{flex:1;font-size:14px;color:#323B30}
+  .gancho p::before{content:"Gancho";display:block;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin-bottom:2px}
 
-  .lead dl{display:grid;grid-template-columns:auto 1fr;gap:3px 14px;font-size:14px;margin-bottom:12px}
-  .lead dt{color:var(--ink-soft);white-space:nowrap}
-  .lead dd b.confirmado{color:var(--ok)}
-  .lead dd b.provavel{color:var(--morno)}
+  .lead-acoes{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .lead-acoes .wa{display:inline-flex;align-items:center;gap:6px;height:32px;padding:0 12px;border-radius:var(--r-ctl);background:var(--accent);color:#fff;font-size:13px;font-weight:600;text-decoration:none}
+  .lead-acoes .wa:hover{background:var(--accent-hover)}
+  .lead-acoes .wa svg{width:15px;height:15px}
+  .lead-acoes .tel{font-size:13px;color:var(--muted);white-space:nowrap}
+  .lead-acoes select.campo-ctl,.lead-acoes input.campo-ctl{height:32px;font-size:13px}
+  .data-prox{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted)}
+  .lead-acoes .direita{margin-left:auto;display:flex;align-items:center;gap:4px}
+  .aviso-fu{font-size:12px;font-weight:600;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  .aviso-fu.atrasado{background:#F9E6DE;color:var(--quente)}
+  .aviso-fu.hoje{background:#F6EED8;color:var(--morno)}
 
-  .gancho{
-    background:#F7F8F2;border-left:3px solid var(--field);border-radius:0 7px 7px 0;
-    padding:9px 12px;font-size:14px;font-style:italic;margin-bottom:12px;
-    display:flex;gap:10px;align-items:flex-start;justify-content:space-between;
-  }
-  .gancho button{flex-shrink:0}
+  /* contatos e anotações */
+  .notas-area{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}
+  .notas-area h5{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--faint);margin-bottom:6px}
+  .notas-area h5 + *{margin-bottom:14px}
+  .registro{display:flex;gap:8px;flex-wrap:wrap}
+  .registro input{flex:1;min-width:200px}
+  .historico{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .historico li{font-size:13px;display:grid;grid-template-columns:78px 1fr;gap:8px}
+  .historico time{color:var(--faint)}
+  .historico li.auto span{color:var(--muted)}
+  .historico .tipo{font-weight:600}
+  .notas-area textarea{width:100%;min-height:64px}
 
-  .lead-rodape{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  .lead-rodape select,.lead-rodape input[type=date]{
-    padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:13px;
-  }
-  .wa{
-    display:inline-flex;align-items:center;gap:6px;text-decoration:none;
-    background:var(--field);color:#fff;font-size:13px;font-weight:600;
-    padding:6px 12px;border-radius:7px;
-  }
-  .wa:hover{background:#3B8049}
-  .tel{font-size:13px;color:var(--ink-soft)}
-  .followup-atrasado{color:var(--quente);font-weight:600;font-size:13px}
-  .followup-hoje{color:var(--morno);font-weight:600;font-size:13px}
-  .lead-rodape .direita{margin-left:auto;display:flex;gap:8px}
-  .notas-area{margin-top:10px}
-  .notas-area textarea{width:100%;min-height:52px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;resize:vertical}
-
-  .vazio{
-    text-align:center;padding:60px 20px;color:var(--ink-soft);
-    border:1px dashed var(--line);border-radius:var(--radius);background:var(--card);
-  }
-  .vazio b{font-family:var(--font-display);font-size:18px;color:var(--ink);display:block;margin-bottom:6px}
-
-  /* ---------- modais ---------- */
-  dialog{
-    border:none;border-radius:12px;padding:0;max-width:640px;width:92vw;
-    box-shadow:0 18px 50px rgba(32,48,31,.25);
-  }
-  dialog::backdrop{background:rgba(32,48,31,.45)}
-  .modal-conteudo{padding:24px}
-  .modal-conteudo h2{font-family:var(--font-display);font-size:20px;margin-bottom:14px}
-  .modal-grade{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
-  @media (max-width:560px){ .modal-grade{grid-template-columns:1fr} }
-  .modal-grade .inteiro{grid-column:1/-1}
-  .modal-rodape{display:flex;justify-content:flex-end;gap:10px;margin-top:8px}
-  .ajuda-json{font-size:13px;color:var(--ink-soft);margin-bottom:10px}
-  .ajuda-json code{background:#F2F5EC;padding:1px 5px;border-radius:4px;font-size:12px}
-
-  .aviso{
-    position:fixed;bottom:22px;left:50%;transform:translateX(-50%);
-    background:var(--ink);color:#fff;padding:10px 18px;border-radius:8px;
-    font-size:14px;opacity:0;pointer-events:none;transition:opacity .25s;
-    z-index:50;
-  }
-  .aviso.mostrar{opacity:1}
-
-  /* ---------- varredura recolhível ---------- */
-  .cartao-varredura > summary{list-style:none;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .cartao-varredura > summary::-webkit-details-marker{display:none}
-  .cartao-varredura > summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--ink-soft);border-bottom:2px solid var(--ink-soft);transform:rotate(45deg);transition:transform .2s;margin-right:4px}
-  .cartao-varredura[open] > summary::after{transform:rotate(-135deg)}
-  .cartao-varredura > summary h2{margin:0}
-  .cartao-varredura[open] > summary{margin-bottom:4px}
-  @media (min-width:901px){ .cartao-varredura > summary{pointer-events:none} .cartao-varredura > summary::after{display:none} }
-  .status-varredura .tempo{font-variant-numeric:tabular-nums;color:var(--ink-soft);white-space:nowrap}
-  .barra-andamento{height:3px;border-radius:99px;background:#E2E8D8;overflow:hidden;margin-top:8px;flex-basis:100%}
-  .barra-andamento i{display:block;width:35%;height:100%;background:var(--field);border-radius:99px;animation:varrer 1.4s ease-in-out infinite}
-  .status-varredura{flex-wrap:wrap}
-
-  /* ---------- alternar lista / funil ---------- */
-  .visao{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:#fff}
-  .visao button{border:0;background:none;padding:8px 14px;font-size:14px;font-weight:600;color:var(--ink-soft)}
-  .visao button[aria-pressed="true"]{background:var(--field);color:#fff}
+  .vazio{text-align:center;padding:56px 20px;color:var(--muted);border:1px dashed var(--line-strong);border-radius:var(--r-box);background:var(--surface-2)}
+  .vazio b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+  .vazio .btn{margin-top:14px}
 
   /* ---------- funil em colunas ---------- */
-  .funil{display:grid;grid-template-columns:repeat(6,minmax(190px,1fr));gap:12px;overflow-x:auto;padding-bottom:8px;scroll-snap-type:x proximity}
-  .coluna{background:#EEF1E7;border:1px solid var(--line);border-radius:var(--radius);padding:10px;min-height:220px;scroll-snap-align:start;display:flex;flex-direction:column;gap:8px}
-  .coluna.alvo{outline:2px dashed var(--field);outline-offset:-4px;background:#E6EEDD}
-  .coluna h4{font-family:var(--font-display);font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:2px 4px 4px}
-  .coluna h4 span{font-family:var(--font-body);font-size:12px;color:var(--ink-soft);background:#fff;border:1px solid var(--line);border-radius:99px;padding:0 8px}
-  .mini-lead{background:#fff;border:1px solid var(--line);border-radius:8px;padding:9px 10px;box-shadow:var(--sombra);cursor:grab;font-size:13px}
+  .funil{display:grid;grid-template-columns:repeat(6,minmax(180px,1fr));gap:10px;overflow-x:auto;padding-bottom:6px;scroll-snap-type:x proximity}
+  .coluna{background:#EEECE5;border-radius:var(--r-box);padding:8px;min-height:240px;scroll-snap-align:start;display:flex;flex-direction:column;gap:6px}
+  .coluna.alvo{background:var(--accent-soft);box-shadow:inset 0 0 0 1px #BFD5BA}
+  .coluna h4{font-size:13px;font-weight:600;display:flex;justify-content:space-between;align-items:center;padding:4px 6px 6px}
+  .coluna h4 span{font-size:12px;font-weight:500;color:var(--muted)}
+  .mini-lead{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px;cursor:grab;font-size:13px}
+  .mini-lead:hover{border-color:var(--line-strong)}
   .mini-lead:active{cursor:grabbing}
-  .mini-lead.arrastando{opacity:.45}
-  .mini-lead b{display:block;font-size:14px;line-height:1.25;margin-bottom:3px}
-  .mini-lead .meta{color:var(--ink-soft);display:flex;justify-content:space-between;gap:6px;align-items:center}
+  .mini-lead.arrastando{opacity:.4}
+  .mini-lead b{display:block;font-size:14px;font-weight:600;line-height:1.3;margin-bottom:4px}
+  .mini-lead .meta{color:var(--muted);display:flex;justify-content:space-between;gap:6px}
   .mini-lead .pt{font-weight:700}
   .mini-lead .pt.q{color:var(--quente)} .mini-lead .pt.m{color:var(--morno)} .mini-lead .pt.f{color:var(--frio)}
-  .mini-lead .fu{margin-top:4px;font-size:12px}
-  .mini-lead select{margin-top:6px;width:100%;padding:4px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;background:#fff}
+  .mini-lead .fu{margin-top:6px}
+  .mini-lead select{margin-top:8px;width:100%}
   @media (hover:hover) and (pointer:fine){ .mini-lead select{display:none} }
-  .coluna .vazia{color:var(--ink-soft);font-size:12px;text-align:center;padding:14px 4px}
-  .lead.destaque{animation:piscar 1.6s ease}
-  @keyframes piscar{0%,60%{box-shadow:0 0 0 3px rgba(47,107,60,.45)}100%{box-shadow:var(--sombra)}}
+  .coluna .vazia{color:var(--faint);font-size:12px;text-align:center;padding:16px 4px}
 
-  /* ---------- links das fontes ---------- */
-  .links{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
-  .links a{font-size:12px;color:var(--field-deep);background:#EEF3E9;border:1px solid #D5E2CC;border-radius:99px;padding:1px 9px;text-decoration:none;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .links a:hover{background:#E1EBD9}
+  /* ---------- diálogos ---------- */
+  dialog{border:0;border-radius:12px;padding:0;max-width:640px;width:calc(100vw - 32px);color:var(--ink);background:var(--surface);
+    box-shadow:0 24px 60px -20px rgba(30,38,29,.4),0 0 0 1px rgba(30,38,29,.06)}
+  dialog::backdrop{background:rgba(24,30,23,.42)}
+  .modal-conteudo{padding:22px 24px}
+  .modal-conteudo h2{font-size:18px;font-weight:700;letter-spacing:-.01em;margin-bottom:16px}
+  .modal-grade{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+  .modal-grade .inteiro{grid-column:1/-1}
+  .campo{margin-bottom:14px}
+  .campo label,.campo .rotulo{display:block;font-size:13px;font-weight:600;margin-bottom:5px}
+  .campo .dica{font-size:12px;color:var(--muted);margin-top:4px}
+  .campo .campo-ctl{width:100%}
+  .modal-rodape{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}
+  .ajuda-json{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .ajuda-json code{background:var(--surface-2);border:1px solid var(--line);padding:0 4px;border-radius:4px;font-size:12px}
 
-  /* ---------- histórico de contatos ---------- */
-  .registro{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px;align-items:flex-start}
-  .registro select{padding:6px 9px;border:1px solid var(--line);border-radius:7px;background:#fff;font-size:13px}
-  .registro input{flex:1;min-width:180px;padding:6px 10px;border:1px solid var(--line);border-radius:7px;font-size:13px}
-  .historico{list-style:none;margin-top:10px;border-left:2px solid var(--line);padding-left:12px;display:flex;flex-direction:column;gap:6px}
-  .historico li{font-size:13px;position:relative}
-  .historico li::before{content:"";position:absolute;left:-17px;top:6px;width:8px;height:8px;border-radius:50%;background:var(--field)}
-  .historico li.auto::before{background:var(--line)}
-  .historico time{color:var(--ink-soft);font-size:12px;margin-right:6px}
-  .historico .tipo{font-weight:600;margin-right:4px}
-  .notas-area h5{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);margin:12px 0 4px}
-  .ult-contato{font-size:12px;color:var(--ink-soft)}
+  /* gaveta da varredura (à direita no computador, tela cheia no celular) */
+  dialog.gaveta{margin:0 0 0 auto;height:100dvh;max-height:none;width:440px;max-width:100vw;border-radius:0;display:none;flex-direction:column}
+  dialog.gaveta[open]{display:flex;animation:entra .22s cubic-bezier(.23,1,.32,1)}
+  @keyframes entra{from{transform:translateX(24px);opacity:0}}
+  .gaveta-cab{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+  .gaveta-cab h2{font-size:17px;font-weight:700}
+  .gaveta-corpo{flex:1;overflow-y:auto;padding:18px 20px}
+  .gaveta-corpo > p{color:var(--muted);font-size:14px;margin-bottom:18px}
+  .gaveta-pe{padding:14px 20px calc(14px + env(safe-area-inset-bottom));border-top:1px solid var(--line)}
+  .gaveta-pe .btn{width:100%;height:42px}
+  .alvos{display:flex;flex-direction:column;border:1px solid var(--line-strong);border-radius:var(--r-box);overflow:hidden}
+  .alvos label{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;cursor:pointer;font-weight:500;margin:0}
+  .alvos label + label{border-top:1px solid var(--line)}
+  .alvos label:hover{background:var(--surface-2)}
+  .alvos input{margin-top:3px;accent-color:var(--accent);width:16px;height:16px;flex:none}
+  .alvos small{display:block;font-weight:400;color:var(--muted);font-size:13px}
 
-  /* ---------- modo funil: ocupa a largura toda ---------- */
-  body.modo-funil .corpo{grid-template-columns:1fr;max-width:none}
-  body.modo-funil .cartao-varredura > summary{pointer-events:auto}
-  body.modo-funil .cartao-varredura > summary::after{display:block}
-  body.modo-funil .filtros input[type=search]{max-width:420px}
-
-  /* ---------- nuvem / senha ---------- */
-  .nuvem{font-size:12px;color:#DCE8D2;text-shadow:0 1px 6px rgba(0,0,0,.5);display:inline-flex;align-items:center;gap:6px}
-  .nuvem::before{content:"";width:7px;height:7px;border-radius:50%;background:#AFC6A3}
-  .nuvem.ok::before{background:#7FD08A}
-  .nuvem.erro{color:#FFD9C7}.nuvem.erro::before{background:#F08A5D}
-  .nuvem:empty{display:none}
   #modalSenha{max-width:380px}
-  #modalSenha .modal-conteudo{text-align:center}
-  #modalSenha p{color:var(--ink-soft);font-size:14px;margin-bottom:14px}
-  #modalSenha input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:16px}
-  #modalSenha .erro{color:var(--quente);font-size:13px;min-height:18px;margin:8px 0 0}
-  #modalSenha .btn{width:100%;margin-top:10px;padding:10px}
+  #modalSenha .modal-conteudo{padding:26px 24px}
+  #modalSenha .marca{margin-bottom:14px}
+  #modalSenha p{color:var(--muted);font-size:14px;margin-bottom:14px}
+  #modalSenha input{width:100%;height:42px}
+  #modalSenha .erro{color:var(--perigo);font-size:13px;min-height:18px;margin:8px 0 4px}
+  #modalSenha .btn{width:100%;height:42px}
+
+  .aviso{position:fixed;bottom:calc(20px + env(safe-area-inset-bottom));left:50%;transform:translate(-50%,8px);background:var(--ink);color:#F2F4EE;
+    padding:10px 16px;border-radius:8px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .18s,transform .18s;z-index:60;max-width:calc(100vw - 32px);text-align:center}
+  .aviso.mostrar{opacity:1;transform:translate(-50%,0)}
 
   /* ---------- celular ---------- */
-  @media (max-width:900px){
-    header{padding:18px 16px}
-    header .acoes{margin-left:0;width:100%}
-    header .acoes .btn{flex:1;padding:8px 6px;font-size:13px}
-    .corpo{padding:16px;gap:16px}
-    .painel-numeros{grid-template-columns:repeat(3,1fr)}
-    .numero{padding:10px 12px}
-    .numero b{font-size:24px}
-    .numero small{font-size:12px;line-height:1.3;display:block}
-    .filtros{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-    .filtros input[type=search],.filtros .visao{grid-column:1/-1}
-    .filtros select{width:100%;min-width:0}
-    .visao button{flex:1}
+  @media (max-width:430px){ .topo .marca b{display:none} }
+  @media (max-width:760px){
+    body{font-size:15px}
+    .topo-in{padding:8px 14px;padding-top:calc(8px + env(safe-area-inset-top));gap:8px}
+    .marca b{font-size:15px}
+    .topo .nuvem{font-size:0;gap:0}
+    .topo .nuvem::before{width:8px;height:8px}
+    .so-largo{display:none!important}
+    .pagina{padding:14px 14px 40px}
+    .cabecalho{margin-bottom:10px}
+    .cabecalho h1{font-size:19px}
+    .cabecalho p{font-size:13px}
+    .resumo{margin:0 -14px 12px;padding:1px 14px}
+    .ferramentas{display:grid;grid-template-columns:auto 1fr;gap:8px}
+    .ferramentas .busca{grid-column:2;min-width:0}
+    .ferramentas .filtros-sel{grid-column:1/-1;display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin:0 -14px;padding:0 14px}
+    .ferramentas .filtros-sel::-webkit-scrollbar{display:none}
+    .ferramentas .filtros-sel select{width:auto;max-width:none}
+    .ferramentas .filtros-sel{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);padding-right:36px}
     .lead{padding:14px}
-    .lead dl{grid-template-columns:1fr;gap:0}
-    .lead dt{font-size:12px;margin-top:6px}
-    .gancho{flex-direction:column}
-    .lead-rodape .direita{margin-left:0;width:100%}
-    .lead-rodape .direita .btn{flex:1}
-    .funil{grid-template-columns:repeat(6,78vw)}
+    .lead-info{grid-template-columns:1fr;gap:0}
+    .lead-info dt{margin-top:8px;font-size:12px}
+    .gancho{flex-direction:column;gap:8px}
+    .gancho .btn{align-self:flex-start}
+    .lead-acoes{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .lead-acoes .wa{justify-content:center;height:38px}
+    .lead-acoes .tel{display:flex;align-items:center}
+    .lead-acoes select.campo-ctl,.lead-acoes input.campo-ctl{height:38px;width:100%}
+    .data-prox{display:flex;flex-direction:column;align-items:stretch;gap:2px}
+    .lead-acoes .direita{grid-column:1/-1;margin-left:0;justify-content:space-between}
+    .lead-acoes .direita .btn{height:36px}
+    .aviso-fu{justify-self:start}
+    .funil{grid-template-columns:repeat(6,82vw);margin:0 -14px;padding:0 14px 6px;scroll-padding:0 14px}
+    .modal-grade{grid-template-columns:1fr 1fr}
+    .modal-grade .campo:not(.par){grid-column:1/-1}
+    dialog:not(.gaveta){width:100vw;max-width:none;max-height:100dvh;height:100dvh;margin:0;border-radius:0}
+    dialog#modalSenha{height:auto;margin:auto;width:calc(100vw - 32px);border-radius:12px}
+    dialog.gaveta{width:100vw}
+    .modal-conteudo{padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+    .modal-rodape{position:sticky;bottom:0;background:var(--surface);padding-top:10px}
+    .modal-rodape .btn{flex:1;height:42px}
   }
 </style>
 </head>
 <body>
 
-<div id="splash" aria-hidden="true">
-  <svg class="splash-cena" width="220" height="150" viewBox="0 0 220 150" fill="none" aria-hidden="true">
-    <!-- sombra projetada no chão -->
-    <ellipse id="sombraDrone" cx="110" cy="142" rx="44" ry="5" fill="#0B1A0E"/>
-    <!-- hastes dos rotores -->
-    <rect x="52" y="34" width="4" height="12" rx="2" fill="#8FA886"/>
-    <rect x="164" y="34" width="4" height="12" rx="2" fill="#8FA886"/>
-    <!-- braços -->
-    <path d="M88 62 L54 45 M132 62 L166 45" stroke="#AFC6A3" stroke-width="4" stroke-linecap="round"/>
-    <!-- corpo -->
-    <rect x="84" y="54" width="52" height="20" rx="8" fill="#F2F5EC"/>
-    <rect x="98" y="48" width="24" height="10" rx="5" fill="#DCE8D2"/>
-    <circle cx="94" cy="64" r="3" fill="#C23A12"/>
-    <!-- tanque de calda -->
-    <rect x="92" y="74" width="36" height="16" rx="5" fill="#AFC6A3"/>
-    <rect x="98" y="78" width="24" height="3" rx="1.5" fill="#7E9873" opacity=".8"/>
-    <!-- trem de pouso -->
-    <path d="M94 74 L84 96 M126 74 L136 96" stroke="#AFC6A3" stroke-width="3.5" stroke-linecap="round"/>
-    <path d="M78 96 L92 96 M128 96 L142 96" stroke="#AFC6A3" stroke-width="3.5" stroke-linecap="round"/>
-    <!-- rotores girando -->
-    <ellipse class="rotor" cx="54" cy="32" rx="26" ry="3.6" fill="#F2F5EC"/>
-    <ellipse class="rotor" cx="166" cy="32" rx="26" ry="3.6" fill="#F2F5EC"/>
-    <circle cx="54" cy="32" r="3" fill="#DCE8D2"/>
-    <circle cx="166" cy="32" r="3" fill="#DCE8D2"/>
-    <!-- névoa de pulverização -->
-    <path class="nevoa" d="M96 92 L84 126 L136 126 L124 92 Z" fill="#DCE8D2"/>
-    <!-- gotas -->
-    <g fill="#DCE8D2">
-      <circle class="gota"    cx="96"  cy="98" r="2.2"/>
-      <circle class="gota g2" cx="104" cy="96" r="1.8"/>
-      <circle class="gota g3" cx="112" cy="99" r="2.2"/>
-      <circle class="gota g2" cx="120" cy="97" r="1.8"/>
-      <circle class="gota"    cx="124" cy="100" r="1.6"/>
-    </g>
-  </svg>
-  <div class="splash-nome">Prospector Agro</div>
-  <div class="splash-sub">preparando o painel…</div>
-  <div class="splash-barra"><i></i></div>
-</div>
-
-<header>
-  <div class="logo">
-    <h1>Prospector Agro</h1>
-    <span>prospecção para serviços de drone agrícola</span>
+<header class="topo">
+  <div class="topo-in">
+    <div class="marca"><span class="selo" aria-hidden="true"></span><b>Prospector Agro</b></div>
     <span class="nuvem" id="nuvem" role="status"></span>
-  </div>
-  <div class="acoes">
-    <button class="btn claro" id="btnImportar">Importar leads</button>
-    <button class="btn claro" id="btnExportar">Exportar backup</button>
-    <button class="btn" id="btnNovoLead">Adicionar lead</button>
+    <div class="acoes">
+      <button class="btn secundario" id="btnAbrirVarredura" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <span>Varredura</span>
+      </button>
+      <button class="btn primario" id="btnNovoLead" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span class="so-largo">Novo lead</span>
+      </button>
+      <details class="menu" id="menuTopo">
+        <summary class="btn fantasma icone" aria-label="Mais opções">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>
+        </summary>
+        <div class="menu-lista">
+          <button type="button" id="btnImportar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>Importar leads</button>
+          <button type="button" id="btnExportar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M5 20h14"/></svg>Exportar backup</button>
+        </div>
+      </details>
+    </div>
   </div>
 </header>
 
-<div class="painel-numeros" id="painelNumeros"></div>
+<main class="pagina">
+  <div class="cabecalho">
+    <div>
+      <h1>Leads</h1>
+      <p>Prospecção para pulverização, sólidos, mapeamento e análise de solo com drone.</p>
+    </div>
+  </div>
 
-<div class="corpo">
+  <nav class="resumo" id="painelNumeros" aria-label="Atalhos"></nav>
 
-  <!-- =============== CONFIGURADOR DE VARREDURA =============== -->
-  <aside>
-    <details class="cartao cartao-varredura" id="cartaoVarredura" open>
-      <summary><h2>Nova varredura</h2></summary>
-      <p class="sub">Escolha a região e os alvos e rode a varredura: a IA pesquisa na web e os leads qualificados entram direto na lista abaixo.</p>
+  <div class="status-varredura" id="statusVarredura" role="status">
+    <span class="pulso" aria-hidden="true"></span>
+    <span id="statusTexto"></span>
+    <span class="tempo num" id="statusTempo"></span>
+    <button class="btn perigo mini" id="btnCancelarVarredura" type="button">Parar</button>
+  </div>
 
-      <div class="campo">
-        <label for="vfEstado">Estado</label>
-        <select id="vfEstado">
-          <option value="">Escolha o estado</option>
-        </select>
-      </div>
-
-      <div class="campo">
-        <label for="vfRegiao">Região ou cidades (opcional)</label>
-        <input type="text" id="vfRegiao" placeholder="ex.: Rio Verde e sudoeste goiano">
-      </div>
-
-      <div class="campo">
-        <label>Alvos da varredura</label>
-        <div class="caixinhas" id="vfAlvos">
-          <label><input type="checkbox" value="produtor" checked>
-            <span>Produtores rurais e fazendas<small>cliente final — contrato recorrente de pulverização e sólidos</small></span></label>
-          <label><input type="checkbox" value="revenda">
-            <span>Revendas de insumos e cooperativas<small>multiplicadores — uma parceria rende dezenas de produtores</small></span></label>
-          <label><input type="checkbox" value="consultoria">
-            <span>Consultorias agronômicas<small>indicam e contratam mapeamento e análise de solo</small></span></label>
-          <label><input type="checkbox" value="usina" checked>
-            <span>Usinas e grandes grupos<small>tíquete alto — mapeamento de grandes áreas e filmagem</small></span></label>
-        </div>
-      </div>
-
-      <div class="campo">
-        <label for="vfQtd">Quantidade de leads</label>
-        <select id="vfQtd">
-          <option value="8" selected>8 — lista enxuta, dá pra abordar na semana</option>
-          <option value="15">15 — mais volume</option>
-          <option value="25">25 — varredura ampla</option>
-        </select>
-      </div>
-
-      <div class="campo">
-        <label for="vfServicos">Serviços em foco nesta varredura</label>
-        <input type="text" id="vfServicos" value="pulverização, dispersão de sólidos, mapeamento aéreo, análise de solo, filmagem de colheita">
-      </div>
-
-      <button class="btn" id="btnRodarVarredura" style="width:100%">Rodar varredura agora</button>
-      <div class="status-varredura" id="statusVarredura" role="status">
-        <span id="statusTexto"></span>
-        <span class="tempo" id="statusTempo"></span>
-        <button class="btn perigo mini" id="btnCancelarVarredura">Parar</button>
-        <div class="barra-andamento"><i></i></div>
-      </div>
-    </details>
-  </aside>
-
-  <!-- =============== FUNIL DE LEADS =============== -->
-  <main>
-    <div class="filtros">
-      <div class="visao" role="group" aria-label="Forma de ver os leads">
-        <button type="button" data-visao="lista" aria-pressed="true">Lista</button>
-        <button type="button" data-visao="funil" aria-pressed="false">Funil</button>
-      </div>
-      <input type="search" id="fBusca" placeholder="Buscar por nome, cidade ou decisor" aria-label="Buscar lead">
-      <select id="fSegmento" aria-label="Filtrar por alvo">
+  <div class="ferramentas">
+    <div class="visao" role="group" aria-label="Forma de ver os leads">
+      <button type="button" data-visao="lista" aria-pressed="true">Lista</button>
+      <button type="button" data-visao="funil" aria-pressed="false">Funil</button>
+    </div>
+    <label class="busca">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      <input type="search" class="campo-ctl" id="fBusca" placeholder="Buscar nome, cidade ou decisor" aria-label="Buscar lead">
+    </label>
+    <div class="filtros-sel">
+      <select class="campo-ctl" id="fSegmento" aria-label="Filtrar por alvo">
         <option value="">Todos os alvos</option>
-        <option value="produtor">Produtores / fazendas</option>
-        <option value="revenda">Revendas / cooperativas</option>
+        <option value="produtor">Produtores e fazendas</option>
+        <option value="revenda">Revendas e cooperativas</option>
         <option value="consultoria">Consultorias</option>
-        <option value="usina">Usinas / grandes grupos</option>
+        <option value="usina">Usinas e grandes grupos</option>
       </select>
-      <select id="fStatus" aria-label="Filtrar por status">
-        <option value="">Todos os status</option>
+      <select class="campo-ctl" id="fStatus" aria-label="Filtrar por etapa">
+        <option value="">Todas as etapas</option>
         <option value="novo">Novo</option>
         <option value="contatado">Contatado</option>
         <option value="conversa">Em conversa</option>
@@ -504,58 +373,110 @@
         <option value="fechado">Fechado</option>
         <option value="perdido">Perdido</option>
       </select>
-      <select id="fOrdem" aria-label="Ordenação">
+      <select class="campo-ctl" id="fOrdem" aria-label="Ordenar">
         <option value="calor">Mais quentes primeiro</option>
-        <option value="followup">Follow-up mais próximo</option>
-        <option value="recentes">Adicionados por último</option>
+        <option value="followup">Próximo contato primeiro</option>
+        <option value="recentes">Mais recentes primeiro</option>
       </select>
     </div>
-    <div class="lista-leads" id="listaLeads"></div>
-    <div class="funil" id="funil" hidden></div>
-  </main>
-</div>
+  </div>
+
+  <div class="lista-leads" id="listaLeads"></div>
+  <div class="funil" id="funil" hidden></div>
+</main>
+
+<!-- =============== GAVETA: NOVA VARREDURA =============== -->
+<dialog class="gaveta" id="painelVarredura" aria-labelledby="tituloVarredura">
+  <div class="gaveta-cab">
+    <h2 id="tituloVarredura">Nova varredura</h2>
+    <button class="btn fantasma icone" type="button" data-fechar aria-label="Fechar">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+  </div>
+  <div class="gaveta-corpo">
+    <p>A IA pesquisa em fontes públicas da região escolhida e os leads entram na lista com nota de calor, motivo para abordar agora e um gancho pronto. Leads que você já tem não voltam.</p>
+    <div class="campo">
+      <label for="vfEstado">Estado</label>
+      <select class="campo-ctl" id="vfEstado"><option value="">Escolha o estado</option></select>
+    </div>
+    <div class="campo">
+      <label for="vfRegiao">Região ou cidades <span style="font-weight:400;color:var(--muted)">(opcional)</span></label>
+      <input type="text" class="campo-ctl" id="vfRegiao" placeholder="Ex.: Rio Verde e sudoeste goiano">
+    </div>
+    <div class="campo">
+      <span class="rotulo">Quem procurar</span>
+      <div class="alvos" id="vfAlvos">
+        <label><input type="checkbox" value="produtor" checked>
+          <span>Produtores e fazendas<small>Cliente final, contrato recorrente de pulverização e sólidos</small></span></label>
+        <label><input type="checkbox" value="revenda">
+          <span>Revendas e cooperativas<small>Uma parceria leva a dezenas de produtores</small></span></label>
+        <label><input type="checkbox" value="consultoria">
+          <span>Consultorias agronômicas<small>Indicam e contratam mapeamento e análise de solo</small></span></label>
+        <label><input type="checkbox" value="usina" checked>
+          <span>Usinas e grandes grupos<small>Tíquete alto: grandes áreas e filmagem</small></span></label>
+      </div>
+    </div>
+    <div class="campo">
+      <label for="vfQtd">Quantos leads</label>
+      <select class="campo-ctl" id="vfQtd">
+        <option value="8" selected>Até 8: dá para abordar na semana</option>
+        <option value="15">Até 15</option>
+        <option value="25">Até 25: varredura ampla</option>
+      </select>
+    </div>
+    <div class="campo">
+      <label for="vfServicos">Serviços em foco</label>
+      <input type="text" class="campo-ctl" id="vfServicos" value="pulverização, dispersão de sólidos, mapeamento aéreo, análise de solo, filmagem de colheita">
+      <p class="dica">Cada varredura usa créditos da sua conta OpenAI e leva alguns minutos.</p>
+    </div>
+  </div>
+  <div class="gaveta-pe">
+    <button class="btn primario" id="btnRodarVarredura" type="button">Rodar varredura</button>
+  </div>
+</dialog>
 
 <!-- =============== MODAL: ADICIONAR / EDITAR LEAD =============== -->
 <dialog id="modalLead">
   <form class="modal-conteudo" id="formLead" method="dialog">
-    <h2 id="modalLeadTitulo">Adicionar lead</h2>
+    <h2 id="modalLeadTitulo">Novo lead</h2>
     <div class="modal-grade">
-      <div class="campo inteiro"><label for="leNome">Nome do negócio *</label>
-        <input type="text" id="leNome" required></div>
-      <div class="campo"><label for="leSegmento">Alvo</label>
-        <select id="leSegmento">
-          <option value="produtor">Produtor / fazenda</option>
-          <option value="revenda">Revenda / cooperativa</option>
+      <div class="campo inteiro"><label for="leNome">Nome do negócio</label>
+        <input type="text" class="campo-ctl" id="leNome" required></div>
+      <div class="campo par"><label for="leSegmento">Tipo</label>
+        <select class="campo-ctl" id="leSegmento">
+          <option value="produtor">Produtor ou fazenda</option>
+          <option value="revenda">Revenda ou cooperativa</option>
           <option value="consultoria">Consultoria agronômica</option>
-          <option value="usina">Usina / grande grupo</option>
+          <option value="usina">Usina ou grande grupo</option>
         </select></div>
-      <div class="campo"><label for="leCalor">Calor (0 a 100)</label>
-        <input type="number" id="leCalor" min="0" max="100" value="50"></div>
-      <div class="campo"><label for="leCidade">Cidade</label>
-        <input type="text" id="leCidade"></div>
-      <div class="campo"><label for="leUf">UF</label>
-        <input type="text" id="leUf" maxlength="2" style="text-transform:uppercase"></div>
-      <div class="campo inteiro"><label for="leSinal">Sinal de oportunidade (por que abordar agora)</label>
-        <textarea id="leSinal" rows="2"></textarea></div>
+      <div class="campo par"><label for="leCalor">Calor (0 a 100)</label>
+        <input type="number" class="campo-ctl" id="leCalor" min="0" max="100" value="50" inputmode="numeric"></div>
+      <div class="campo par"><label for="leCidade">Cidade</label>
+        <input type="text" class="campo-ctl" id="leCidade"></div>
+      <div class="campo par"><label for="leUf">UF</label>
+        <input type="text" class="campo-ctl" id="leUf" maxlength="2" style="text-transform:uppercase"></div>
+      <div class="campo inteiro"><label for="leSinal">Por que abordar agora</label>
+        <textarea class="campo-ctl" id="leSinal" rows="2"></textarea></div>
       <div class="campo"><label for="leDecisor">Decisor</label>
-        <input type="text" id="leDecisor"></div>
-      <div class="campo"><label for="leDecisorStatus">Decisor é</label>
-        <select id="leDecisorStatus">
+        <input type="text" class="campo-ctl" id="leDecisor"></div>
+      <div class="campo"><label for="leDecisorStatus">O decisor é</label>
+        <select class="campo-ctl" id="leDecisorStatus">
           <option value="provavel">Provável</option>
           <option value="confirmado">Confirmado</option>
         </select></div>
-      <div class="campo"><label for="leWhatsapp">WhatsApp (só números, com DDD)</label>
-        <input type="text" id="leWhatsapp" placeholder="ex.: 64999998888"></div>
+      <div class="campo"><label for="leWhatsapp">WhatsApp com DDD</label>
+        <input type="tel" class="campo-ctl" id="leWhatsapp" placeholder="64 99999-8888" inputmode="tel"></div>
       <div class="campo"><label for="leTelefone">Telefone fixo</label>
-        <input type="text" id="leTelefone"></div>
+        <input type="tel" class="campo-ctl" id="leTelefone" inputmode="tel"></div>
       <div class="campo inteiro"><label for="leGancho">Gancho de abordagem</label>
-        <textarea id="leGancho" rows="2"></textarea></div>
+        <textarea class="campo-ctl" id="leGancho" rows="3"></textarea></div>
       <div class="campo inteiro"><label for="leFontes">Fontes</label>
-        <input type="text" id="leFontes" placeholder="de onde saiu a informação"></div>
+        <input type="text" class="campo-ctl" id="leFontes" placeholder="De onde veio a informação. Links viram atalhos clicáveis.">
+      </div>
     </div>
     <div class="modal-rodape">
-      <button type="button" class="btn neutro" id="btnCancelarLead">Cancelar</button>
-      <button type="submit" class="btn">Salvar lead</button>
+      <button type="button" class="btn secundario" id="btnCancelarLead">Cancelar</button>
+      <button type="submit" class="btn primario">Salvar lead</button>
     </div>
   </form>
 </dialog>
@@ -565,19 +486,19 @@
   <div class="modal-conteudo">
     <h2>Importar leads</h2>
     <p class="ajuda-json">
-      Cole aqui um bloco JSON com leads (ex.: um backup exportado ou uma lista gerada fora do painel).
-      Campos aceitos: <code>nome</code>, <code>segmento</code> (produtor | revenda | consultoria | usina),
-      <code>cidade</code>, <code>uf</code>, <code>calor</code> (0–100), <code>sinal</code>,
-      <code>decisor</code>, <code>decisorStatus</code> (confirmado | provavel), <code>whatsapp</code>,
-      <code>telefone</code>, <code>gancho</code>, <code>fontes</code>, <code>links</code> (lista de endereços).
-      Leads repetidos (mesmo nome e cidade) são ignorados.
+      Cole um backup exportado por este painel ou uma lista em JSON.
+      Campos aceitos: <code>nome</code>, <code>segmento</code> (produtor, revenda, consultoria ou usina),
+      <code>cidade</code>, <code>uf</code>, <code>calor</code> (0 a 100), <code>sinal</code>,
+      <code>decisor</code>, <code>decisorStatus</code> (confirmado ou provavel), <code>whatsapp</code>,
+      <code>telefone</code>, <code>gancho</code>, <code>fontes</code> e <code>links</code>.
+      Leads com o mesmo nome e cidade de um que já existe são ignorados.
     </p>
     <div class="campo">
-      <textarea id="importarTexto" rows="10" style="width:100%" placeholder='[{"nome":"Fazenda Boa Vista","segmento":"produtor","cidade":"Rio Verde","uf":"GO","calor":82,...}]'></textarea>
+      <textarea class="campo-ctl" id="importarTexto" rows="10" style="width:100%;font-size:13px" placeholder='[{"nome":"Fazenda Boa Vista","segmento":"produtor","cidade":"Rio Verde","uf":"GO","calor":82}]'></textarea>
     </div>
     <div class="modal-rodape">
-      <button type="button" class="btn neutro" id="btnCancelarImportar">Cancelar</button>
-      <button type="button" class="btn" id="btnConfirmarImportar">Importar</button>
+      <button type="button" class="btn secundario" id="btnCancelarImportar">Cancelar</button>
+      <button type="button" class="btn primario" id="btnConfirmarImportar">Importar</button>
     </div>
   </div>
 </dialog>
@@ -585,11 +506,11 @@
 <!-- =============== MODAL: SENHA (versão online) =============== -->
 <dialog id="modalSenha">
   <form class="modal-conteudo" id="formSenha">
-    <h2>Prospector Agro</h2>
+    <div class="marca"><span class="selo" aria-hidden="true"></span><b>Prospector Agro</b></div>
     <p>Digite a senha do painel. Ela fica guardada neste aparelho.</p>
-    <input type="password" id="campoSenha" autocomplete="current-password" required aria-label="Senha">
+    <input type="password" class="campo-ctl" id="campoSenha" autocomplete="current-password" required aria-label="Senha">
     <p class="erro" id="erroSenha"></p>
-    <button class="btn" type="submit" id="btnEntrar">Entrar</button>
+    <button class="btn primario" type="submit" id="btnEntrar">Entrar</button>
   </form>
 </dialog>
 
@@ -644,15 +565,15 @@ function carregar(){
   // primeiro uso: um lead de exemplo para mostrar o formato
   return [normalizarLead({
     id: 'exemplo-1',
-    nome: 'Fazenda Boa Vista (exemplo — pode apagar)',
+    nome: 'Fazenda Boa Vista (exemplo, pode apagar)',
     segmento: 'produtor',
     cidade: 'Rio Verde', uf: 'GO',
     calor: 82,
-    sinal: 'Plantio de soja em andamento na região e nenhum prestador de pulverização com drone atendendo o município — janela de aplicação de fungicida abre em poucas semanas.',
+    sinal: 'Plantio de soja em andamento na região e nenhum prestador de pulverização com drone atendendo o município. A janela de aplicação de fungicida abre em poucas semanas.',
     decisor: 'João Silva', decisorStatus: 'provavel',
     whatsapp: '64999990000', telefone: '(64) 3600-0000',
-    gancho: 'João, vi que a Boa Vista está no plantio da soja. Trabalho com pulverização por drone aqui na região — na janela do fungicida, o drone entra mesmo com solo úmido, sem amassar lavoura. Posso te mostrar como funciona numa área pequena?',
-    fontes: 'Exemplo ilustrativo — não é um lead real',
+    gancho: 'João, vi que a Boa Vista está no plantio da soja. Trabalho com pulverização por drone aqui na região. Na janela do fungicida, o drone entra mesmo com solo úmido, sem amassar lavoura. Posso te mostrar como funciona numa área pequena?',
+    fontes: 'Exemplo ilustrativo, não é um lead real',
     status: 'novo', followUp: '', notas: '',
     criadoEm: new Date().toISOString()
   })];
@@ -677,7 +598,7 @@ function guardarLocal(){
   try{
     localStorage.setItem(CHAVE, JSON.stringify(limpos()));
     localStorage.setItem(CHAVE_REMOVIDOS, JSON.stringify(removidos));
-  }catch(e){ avisar('Não deu para salvar no navegador — exporte um backup.'); }
+  }catch(e){ avisar('Não deu para salvar no navegador. Exporte um backup.'); }
 }
 function salvar(){
   carimbar();
@@ -741,7 +662,7 @@ async function sincronizar(){
     if(aplicarDoServidor(d)) pendente = true;
     nuvem('Salvo na nuvem', 'ok');
   }catch(e){
-    if(e.status !== 401) nuvem(e.status ? 'Erro ao salvar na nuvem — salvo neste aparelho' : 'Sem conexão — salvo neste aparelho', 'erro');
+    if(e.status !== 401) nuvem(e.status ? 'Erro na nuvem, salvo neste aparelho' : 'Sem conexão, salvo neste aparelho', 'erro');
   }finally{
     sincronizando = false;
     if(pendente){ pendente = false; syncTimer = setTimeout(sincronizar, 300); }
@@ -795,21 +716,36 @@ function registrar(lead, tipo, texto, auto){
 }
 function ultimoContato(l){ return l.historico.find(h=>!h.auto); }
 
-/* ===================== números do funil ===================== */
+/* ===================== atalhos do dia ===================== */
+// cada atalho é um filtro rápido; tocar de novo desliga
+let rapido = '';
+const ATALHOS = {
+  hoje:     { rotulo:'Para contatar hoje', teste:(l,h)=>ativo(l) && l.followUp && l.followUp<=h },
+  quentes:  { rotulo:'Quentes',            teste:l=>ativo(l) && Number(l.calor)>=70 },
+  novos:    { rotulo:'Sem contato',        teste:l=>l.status==='novo' },
+  proposta: { rotulo:'Propostas',          teste:l=>l.status==='proposta' },
+  fechados: { rotulo:'Fechados',           teste:l=>l.status==='fechado' }
+};
+function ativo(l){ return l.status!=='fechado' && l.status!=='perdido'; }
 function renderNumeros(){
   const hoje = hojeISO();
-  const ativos = leads.filter(l=>l.status!=='fechado'&&l.status!=='perdido');
-  const quentes = ativos.filter(l=>Number(l.calor)>=70).length;
-  const followHoje = ativos.filter(l=>l.followUp && l.followUp<=hoje).length;
-  const propostas = leads.filter(l=>l.status==='proposta').length;
-  const fechados = leads.filter(l=>l.status==='fechado').length;
-  $('#painelNumeros').innerHTML = `
-    <div class="numero"><b>${ativos.length}</b><small>leads em aberto</small></div>
-    <div class="numero"><b>${quentes}</b><small>quentes para abordar</small></div>
-    <div class="numero ${followHoje>0?'alerta':''}"><b>${followHoje}</b><small>follow-ups para hoje ou atrasados</small></div>
-    <div class="numero"><b>${propostas}</b><small>propostas na mesa</small></div>
-    <div class="numero"><b>${fechados}</b><small>clientes fechados</small></div>`;
+  const abertos = leads.filter(ativo).length;
+  $('#painelNumeros').innerHTML =
+    `<button type="button" class="atalho" data-rapido="" aria-pressed="${rapido===''}">Todos <b class="num">${leads.length}</b></button>` +
+    Object.entries(ATALHOS).map(([k,a])=>{
+      const n = leads.filter(l=>a.teste(l,hoje)).length;
+      return `<button type="button" class="atalho ${k==='hoje'&&n?'alerta':''}" data-rapido="${k}" aria-pressed="${rapido===k}">${a.rotulo} <b class="num">${n}</b></button>`;
+    }).join('');
+  const sub = document.querySelector('.cabecalho p');
+  if(sub) sub.textContent = leads.length
+    ? `${abertos} em aberto · prospecção para pulverização, sólidos, mapeamento e análise de solo com drone.`
+    : 'Prospecção para pulverização, sólidos, mapeamento e análise de solo com drone.';
 }
+$('#painelNumeros').addEventListener('click', e=>{
+  const b = e.target.closest('[data-rapido]'); if(!b) return;
+  rapido = (rapido === b.dataset.rapido) ? '' : b.dataset.rapido;
+  renderTudo();
+});
 
 /* ===================== lista de leads ===================== */
 function leadsFiltrados(ignorarStatus){
@@ -817,7 +753,9 @@ function leadsFiltrados(ignorarStatus){
   const seg = $('#fSegmento').value;
   const st = ignorarStatus ? '' : $('#fStatus').value;
   const ordem = $('#fOrdem').value;
+  const hoje = hojeISO();
   let lista = leads.filter(l=>{
+    if(rapido && ATALHOS[rapido] && !ATALHOS[rapido].teste(l, hoje)) return false;
     if(seg && l.segmento!==seg) return false;
     if(st && l.status!==st) return false;
     if(busca){
@@ -833,23 +771,27 @@ function leadsFiltrados(ignorarStatus){
 }
 
 function htmlFollow(l, hoje){
-  if(!l.followUp || l.status==='fechado' || l.status==='perdido') return '';
-  if(l.followUp < hoje) return `<span class="followup-atrasado">follow-up atrasado</span>`;
-  if(l.followUp === hoje) return `<span class="followup-hoje">follow-up hoje</span>`;
+  if(!l.followUp || !ativo(l)) return '';
+  if(l.followUp < hoje) return `<span class="aviso-fu atrasado">Contato atrasado</span>`;
+  if(l.followUp === hoje) return `<span class="aviso-fu hoje">Contatar hoje</span>`;
   return '';
 }
+
+const ICONE_WHATS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.5-.2-.7.2-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-1.7-.9-2.8-1.5-4-3.4-.3-.5.3-.5.8-1.5.1-.2 0-.4 0-.5 0-.2-.7-1.6-.9-2.2-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.3 5.2 4.6 2 .8 2.7.9 3.7.8.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2a10 10 0 00-8.6 15l-1.3 4.8 4.9-1.3A10 10 0 1012 2z"/></svg>';
+const ICONE_MAIS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="19" cy="12" r="1.8"/></svg>';
 
 function renderLeads(){
   const lista = leadsFiltrados();
   const cont = $('#listaLeads');
   if(lista.length===0){
     cont.innerHTML = leads.length ? `<div class="vazio">
-      <b>Nenhum lead com esses filtros</b>
-      Mude a busca ou os filtros acima para ver os outros leads.
+      <b>Nenhum lead nesse filtro</b>
+      Mude a busca, os filtros ou o atalho selecionado.
+      <div><button type="button" class="btn secundario" data-limpar>Limpar filtros</button></div>
     </div>` : `<div class="vazio">
-      <b>Nenhum lead por aqui ainda</b>
-      Escolha o estado e os alvos em “Nova varredura” e clique em “Rodar varredura agora”.
-      Também dá para adicionar um lead à mão ou importar um backup.
+      <b>Nenhum lead ainda</b>
+      Rode uma varredura para a IA buscar leads na sua região, ou adicione um à mão.
+      <div><button type="button" class="btn primario" data-abrir-varredura>Abrir varredura</button></div>
     </div>`;
     return;
   }
@@ -859,62 +801,69 @@ function renderLeads(){
     const cc = classeCalor(calor);
     const wa = linkWhats(l);
     const waLink = wa ? `<a class="wa" href="${esc(wa)}" target="_blank" rel="noopener" data-acao="whats"
-      title="${l.gancho?'Abre o WhatsApp com o gancho já escrito':'Abre o WhatsApp'}">WhatsApp</a>` : '';
-    const tel = l.telefone ? `<span class="tel">${esc(l.telefone)}</span>` : '';
+      title="${l.gancho?'Abre o WhatsApp com o gancho já escrito':'Abre o WhatsApp'}">${ICONE_WHATS}WhatsApp</a>` : '';
+    const tel = l.telefone ? `<a class="tel" href="tel:${esc(soNumeros(l.telefone))}">${esc(l.telefone)}</a>` : '';
     const dec = l.decisor
-      ? `${esc(l.decisor)} <b class="${l.decisorStatus==='confirmado'?'confirmado':'provavel'}">(${l.decisorStatus==='confirmado'?'confirmado':'provável'})</b>`
-      : '<span style="color:var(--ink-soft)">a descobrir</span>';
+      ? `${esc(l.decisor)} <span class="${l.decisorStatus==='confirmado'?'confirmado':'provavel'}">${l.decisorStatus==='confirmado'?'confirmado':'provável'}</span>`
+      : '<span class="a-descobrir">A descobrir</span>';
     const links = linksValidos(l.links);
     const fontesHtml = (l.fontes || links.length) ? `<dt>Fontes</dt><dd>${esc(l.fontes)}${links.length?`<div class="links">${
       links.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer" title="${esc(u)}">${esc(rotuloLink(u))}</a>`).join('')}</div>`:''}</dd>` : '';
     const ult = ultimoContato(l);
     const nHist = l.historico.filter(h=>!h.auto).length;
+    const onde = [l.cidade, (l.uf||'').toUpperCase()].filter(Boolean).join(', ');
     return `<article class="lead ${l.status==='fechado'?'fechado':''} ${l.status==='perdido'?'perdido':''}" data-id="${esc(l.id)}">
-      <div class="lead-topo">
-        <h3>${esc(l.nome)}</h3>
-        <span class="chip ${esc(l.segmento)}">${SEGMENTOS[l.segmento]||esc(l.segmento)}</span>
+      <div class="lead-cab">
+        <div class="lead-titulo">
+          <h3>${esc(l.nome)}</h3>
+          <p class="lead-sub">${esc(SEGMENTOS[l.segmento]||l.segmento)}${onde?`<span class="sep">·</span>${esc(onde)}`:''}</p>
+          ${htmlFollow(l, hoje) ? `<p class="lead-fu">${htmlFollow(l, hoje)}</p>` : ''}
+        </div>
+        <div class="calor ${cc}" title="Calor: ${calor} de 100" style="--v:${calor}%">
+          <b class="num">${calor}</b><span>${rotuloCalor(calor)}</span><i></i>
+        </div>
       </div>
-      <div class="calor ${cc}" title="Calor do lead: ${calor} de 100">
-        <div class="trilha"><div class="nivel" style="width:${calor}%"></div></div>
-        <span class="valor">${calor} · ${rotuloCalor(calor)}</span>
-      </div>
-      <dl>
-        ${l.cidade||l.uf ? `<dt>Onde</dt><dd>${esc(l.cidade)}${l.cidade&&l.uf?' – ':''}${esc((l.uf||'').toUpperCase())}</dd>` : ''}
+      <dl class="lead-info">
         ${l.sinal ? `<dt>Por que agora</dt><dd>${esc(l.sinal)}</dd>` : ''}
         <dt>Decisor</dt><dd>${dec}</dd>
         ${fontesHtml}
-        ${ult ? `<dt>Último contato</dt><dd><span class="ult-contato">${dataBR(ult.data)} · ${esc(TIPOS_CONTATO[ult.tipo]||ult.tipo)}${ult.texto?' — '+esc(ult.texto):''}</span></dd>` : ''}
+        ${ult ? `<dt>Último contato</dt><dd>${dataBR(ult.data)} · ${esc(TIPOS_CONTATO[ult.tipo]||ult.tipo)}${ult.texto?`: ${esc(ult.texto)}`:''}</dd>` : ''}
       </dl>
-      ${l.gancho ? `<div class="gancho"><span>“${esc(l.gancho)}”</span>
-        <button class="btn neutro mini" data-acao="copiarGancho">Copiar</button></div>` : ''}
-      <div class="lead-rodape">
-        ${waLink} ${tel}
-        <select data-acao="status" aria-label="Status do lead">
+      ${l.gancho ? `<div class="gancho"><p>${esc(l.gancho)}</p>
+        <button class="btn secundario mini" data-acao="copiarGancho">Copiar</button></div>` : ''}
+      <div class="lead-acoes">
+        ${waLink}${tel}
+        <select class="campo-ctl" data-acao="status" aria-label="Etapa do lead">
           ${Object.entries(STATUS).map(([v,r])=>`<option value="${v}" ${l.status===v?'selected':''}>${r}</option>`).join('')}
         </select>
-        <label style="font-size:13px;color:var(--ink-soft)">Próximo contato
-          <input type="date" data-acao="followup" value="${esc(l.followUp||'')}" aria-label="Data do próximo contato">
+        <label class="data-prox">Próximo contato
+          <input type="date" class="campo-ctl" data-acao="followup" value="${esc(l.followUp||'')}">
         </label>
-        ${htmlFollow(l, hoje)}
         <div class="direita">
-          <button class="btn neutro mini" data-acao="notas" aria-expanded="${l._notasAbertas?'true':'false'}">Contatos e notas${nHist?` (${nHist})`:''}</button>
-          <button class="btn neutro mini" data-acao="editar">Editar</button>
-          <button class="btn perigo mini" data-acao="excluir">Excluir</button>
+          <button class="btn fantasma mini" data-acao="notas" aria-expanded="${l._notasAbertas?'true':'false'}">Contatos e notas${nHist?` (${nHist})`:''}</button>
+          <details class="menu">
+            <summary class="btn fantasma mini icone" aria-label="Mais ações para ${esc(l.nome)}">${ICONE_MAIS}</summary>
+            <div class="menu-lista">
+              <button type="button" data-acao="editar">Editar lead</button>
+              <hr>
+              <button type="button" class="perigo" data-acao="excluir">Excluir</button>
+            </div>
+          </details>
         </div>
       </div>
       <div class="notas-area" ${l._notasAbertas?'':'hidden'}>
         <h5>Registrar contato</h5>
         <div class="registro">
-          <select data-campo="tipo" aria-label="Tipo de contato">
+          <select class="campo-ctl" data-campo="tipo" aria-label="Tipo de contato">
             ${Object.entries(TIPOS_CONTATO).map(([v,r])=>`<option value="${v}">${r}</option>`).join('')}
           </select>
-          <input type="text" data-campo="resumo" placeholder="O que aconteceu? ex.: mandei o gancho, pediu orçamento" aria-label="Resumo do contato">
-          <button class="btn mini" data-acao="registrar">Registrar</button>
+          <input type="text" class="campo-ctl" data-campo="resumo" placeholder="O que aconteceu? Ex.: mandei o gancho" aria-label="Resumo do contato">
+          <button class="btn primario" data-acao="registrar">Registrar</button>
         </div>
-        ${l.historico.length ? `<ul class="historico">${l.historico.slice(0,30).map(h=>`<li class="${h.auto?'auto':''}">
-          <time datetime="${esc(h.data)}">${dataBR(h.data)}</time>${h.auto?'':`<span class="tipo">${esc(TIPOS_CONTATO[h.tipo]||h.tipo)}</span>`}${esc(h.texto)}</li>`).join('')}</ul>` : ''}
+        ${l.historico.length ? `<h5>Histórico</h5><ul class="historico">${l.historico.slice(0,30).map(h=>`<li class="${h.auto?'auto':''}">
+          <time datetime="${esc(h.data)}">${dataBR(h.data)}</time><span>${h.auto?'':`<span class="tipo">${esc(TIPOS_CONTATO[h.tipo]||h.tipo)}:</span> `}${esc(h.texto)}</span></li>`).join('')}</ul>` : ''}
         <h5>Anotações</h5>
-        <textarea data-acao="notasTexto" placeholder="Anotações gerais: tamanho da área, culturas, objeções…">${esc(l.notas||'')}</textarea>
+        <textarea class="campo-ctl" data-acao="notasTexto" placeholder="Tamanho da área, culturas, objeções…">${esc(l.notas||'')}</textarea>
       </div>
     </article>`;
   }).join('');
@@ -933,7 +882,7 @@ function renderFunil(){
         return `<div class="mini-lead" draggable="true" data-id="${esc(l.id)}" tabindex="0" title="Abrir na lista">
           <b>${esc(l.nome)}</b>
           <div class="meta"><span>${esc(l.cidade||'')}${l.uf?' – '+esc(l.uf):''}</span><span class="pt ${classeCalor(calor)}">${calor}</span></div>
-          ${htmlFollow(l, hoje) ? `<div class="fu">${htmlFollow(l, hoje)}</div>` : (l.followUp && st!=='fechado' && st!=='perdido' ? `<div class="fu" style="color:var(--ink-soft)">próximo: ${dataBR(l.followUp)}</div>` : '')}
+          ${htmlFollow(l, hoje) ? `<div class="fu">${htmlFollow(l, hoje)}</div>` : (l.followUp && st!=='fechado' && st!=='perdido' ? `<div class="fu" style="color:var(--muted)">Próximo: ${dataBR(l.followUp)}</div>` : '')}
           <select data-mover aria-label="Mover ${esc(l.nome)} para">
             ${Object.entries(STATUS).map(([v,r])=>`<option value="${v}" ${v===st?'selected':''}>${r}</option>`).join('')}
           </select>
@@ -1005,8 +954,6 @@ function definirVisao(v){
   $('#funil').hidden = v!=='funil';
   $('#fStatus').hidden = v==='funil';      // no funil as colunas já são o status
   document.body.classList.toggle('modo-funil', v==='funil');
-  if(v==='funil' && !varredura) $('#cartaoVarredura').open = false;
-  else if(v==='lista' && matchMedia('(min-width: 901px)').matches) $('#cartaoVarredura').open = true;
   try{ const cfg = JSON.parse(localStorage.getItem(CHAVE_CFG)||'{}'); cfg.visao = v; localStorage.setItem(CHAVE_CFG, JSON.stringify(cfg)); }catch(e){}
   if(v==='funil') renderFunil(); else renderLeads();
 }
@@ -1033,7 +980,7 @@ $('#listaLeads').addEventListener('click', e=>{
     renderLeads();
   } else if(acao==='copiarGancho'){
     navigator.clipboard.writeText(lead.gancho||'').then(
-      ()=>avisar('Gancho copiado — cole no WhatsApp.'),
+      ()=>avisar('Gancho copiado. Cole no WhatsApp.'),
       ()=>avisar('Não foi possível copiar automaticamente.')
     );
   } else if(acao==='registrar'){
@@ -1078,7 +1025,7 @@ $('#listaLeads').addEventListener('input', e=>{
 /* ===================== modal: adicionar / editar ===================== */
 function abrirModalLead(lead){
   editandoId = lead ? lead.id : null;
-  $('#modalLeadTitulo').textContent = lead ? 'Editar lead' : 'Adicionar lead';
+  $('#modalLeadTitulo').textContent = lead ? 'Editar lead' : 'Novo lead';
   $('#leNome').value = lead?.nome||'';
   $('#leSegmento').value = lead?.segmento||'produtor';
   $('#leCalor').value = lead?.calor??50;
@@ -1185,7 +1132,7 @@ $('#btnConfirmarImportar').addEventListener('click', ()=>{
   try{
     dados = JSON.parse(texto);
     if(!Array.isArray(dados)) dados = dados.leads || [dados];
-  }catch(err){ avisar('JSON inválido — confira se copiou o bloco inteiro.'); return; }
+  }catch(err){ avisar('JSON inválido. Confira se copiou o bloco inteiro.'); return; }
   const {novos, pulados} = importarLeadsArray(dados);
   $('#modalImportar').close();
   avisar(`${novos} lead(s) importado(s)${pulados?`, ${pulados} ignorado(s) (duplicado ou sem nome)`:''}.`);
@@ -1205,7 +1152,7 @@ $('#btnExportar').addEventListener('click', ()=>{
 const selEstado = $('#vfEstado');
 for(const [sigla,nome] of Object.entries(UFS)){
   const op = document.createElement('option');
-  op.value=sigla; op.textContent=`${sigla} — ${nome}`;
+  op.value=sigla; op.textContent=`${nome} (${sigla})`;
   selEstado.appendChild(op);
 }
 (function restaurarConfig(){
@@ -1370,6 +1317,7 @@ async function rodarVarredura(){
   if(!chaveOk()) return;
   const p = coletarParametrosVarredura();
   if(!p) return;
+  $('#painelVarredura').close();
 
   const input = montarPromptVarredura(p);
   const formato = { type:'json_schema', name:'leads', strict:true, schema:ESQUEMA_LEADS };
@@ -1388,7 +1336,7 @@ async function rodarVarredura(){
   }
   if(!resposta){
     $('#btnRodarVarredura').disabled = false; statusVarredura(null);
-    avisar('Varredura falhou: ' + (ultimoErro instanceof TypeError ? 'sem conexão com a API — verifique sua internet.' : ultimoErro.message), 6000);
+    avisar('Varredura falhou: ' + (ultimoErro instanceof TypeError ? 'sem conexão com a API. Verifique sua internet.' : ultimoErro.message), 6000);
     return;
   }
   const info = { id: resposta.id, inicio: Date.now(), params: p };
@@ -1404,7 +1352,7 @@ function acompanhar(info){
   varredura = { ...info };
   $('#btnRodarVarredura').disabled = true;
   const alvo = `${UFS[info.params.estado]||info.params.estado}${info.params.regiao?' · '+info.params.regiao:''}`;
-  statusVarredura(`Pesquisando na web (${alvo})… pode levar alguns minutos. Pode continuar usando o painel.`);
+  statusVarredura(`Varredura em andamento: ${alvo}. Leva alguns minutos e você pode continuar usando o painel.`);
   const tic = ()=>{ $('#statusTempo').textContent = relogio(info.inicio); };
   tic(); varredura.relogio = setInterval(tic, 1000);
   let falhas = 0;
@@ -1419,7 +1367,7 @@ function acompanhar(info){
       if(err.status === 404 || err.status === 401){ encerrar(); avisar('Varredura falhou: ' + err.message, 6000); return; }
       // sem internet ou instabilidade: continua tentando, com espera maior
       falhas++; varredura.timer = setTimeout(consultar, Math.min(60000, 5000 * 2 ** falhas));
-      statusVarredura(`Sem resposta da API — tentando de novo… (${alvo})`);
+      statusVarredura(`Sem resposta da API, tentando de novo… (${alvo})`);
     }
   };
   varredura.timer = setTimeout(consultar, 3000);
@@ -1451,7 +1399,7 @@ function concluir(resposta, info){
   const quando = new Date().toLocaleDateString('pt-BR');
   const {novos, pulados} = importarLeadsArray(dados, `Encontrado na varredura de ${quando} (${info.params?.estado||''})`);
   const semLinks = citados.length && !dados.some(d=>d.links.length);
-  avisar(`Varredura concluída: ${novos} lead(s) novo(s)${pulados?`, ${pulados} repetido(s) ignorado(s)`:''}.${semLinks?' As fontes vieram sem link — confira antes de abordar.':''}`, 5000);
+  avisar(`Varredura concluída: ${novos} lead(s) novo(s)${pulados?`, ${pulados} repetido(s) ignorado(s)`:''}.${semLinks?' As fontes vieram sem link: confira antes de abordar.':''}`, 5000);
   if(novos && $('#fStatus').value && $('#fStatus').value!=='novo'){ $('#fStatus').value=''; renderTudo(); }
 }
 
@@ -1466,12 +1414,29 @@ async function cancelarVarredura(){
 $('#btnRodarVarredura').addEventListener('click', rodarVarredura);
 $('#btnCancelarVarredura').addEventListener('click', cancelarVarredura);
 
+/* ===================== gaveta e menus ===================== */
+const gaveta = $('#painelVarredura');
+function abrirVarredura(){ if(!gaveta.open) gaveta.showModal(); }
+$('#btnAbrirVarredura').addEventListener('click', abrirVarredura);
+gaveta.addEventListener('click', e=>{ if(e.target === gaveta || e.target.closest('[data-fechar]')) gaveta.close(); });
+// um menu ⋯ aberto por vez; fecha ao tocar fora, ao escolher uma ação ou com Esc
+document.addEventListener('click', e=>{
+  document.querySelectorAll('details.menu[open]').forEach(m=>{
+    if(!m.contains(e.target) || e.target.closest('.menu-lista button')) m.open = false;
+  });
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') document.querySelectorAll('details.menu[open]').forEach(m=>m.open=false); });
+$('#listaLeads').addEventListener('click', e=>{
+  if(e.target.closest('[data-abrir-varredura]')) abrirVarredura();
+  if(e.target.closest('[data-limpar]')){
+    rapido=''; $('#fBusca').value=''; $('#fSegmento').value=''; $('#fStatus').value=''; renderTudo();
+  }
+});
+
 /* ===================== início ===================== */
 definirVisao(visao);
 renderNumeros();
 
-// no celular, a varredura começa recolhida (os leads aparecem primeiro)
-if(matchMedia('(max-width: 900px)').matches && leads.length) $('#cartaoVarredura').open = false;
 
 // versão online: pede a senha e junta os leads deste aparelho com os da nuvem
 if(MODO === 'online'){
@@ -1502,23 +1467,10 @@ if(MODO === 'online'){
     if(!info || !info.id) return;
     if(Date.now() - info.inicio > 6*3600*1000){ localStorage.removeItem(CHAVE_VARREDURA); return; }
     if(MODO === 'online' && !senha) return;
-    $('#cartaoVarredura').open = true;
     acompanhar(info);
   }catch(e){}
 })();
 
-// tela de carregamento: sai quando a página termina de carregar
-(function(){
-  const sair = ()=>{
-    const s = document.getElementById('splash');
-    if(!s) return;
-    s.classList.add('sair');
-    setTimeout(()=>s.remove(), 650);
-  };
-  if(document.readyState === 'complete') setTimeout(sair, 1000);
-  else window.addEventListener('load', ()=>setTimeout(sair, 1000));
-  setTimeout(sair, 4000); // garantia: nunca fica presa
-})();
 </script>
 </body>
 </html>
