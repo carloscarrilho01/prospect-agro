@@ -1,2 +1,4 @@
 # chave da API da OpenAI — nunca sobe para o GitHub
 chave.js
+node_modules/
+.local/

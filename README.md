@@ -4,14 +4,28 @@ Painel de prospecção de clientes para serviços de **drone agrícola** — pul
 
 É um único arquivo HTML que roda direto no navegador, sem instalar nada. A varredura usa a API da OpenAI com busca na web: você escolhe o estado e os alvos (produtores, revendas/cooperativas, consultorias, usinas) e os leads qualificados entram direto no funil, com nota de calor, sinal de oportunidade, contatos e gancho de abordagem.
 
-## Como usar
+## Duas formas de usar
 
+### Online (Vercel) — recomendado
+O painel fica num link com senha. A chave da OpenAI fica guardada no servidor (ninguém vê pelo navegador) e os leads ficam salvos num armazenamento privado da Vercel, sincronizando entre celular e computador.
+
+Variáveis de ambiente do projeto na Vercel:
+
+| Nome | O que é |
+|---|---|
+| `ADMIN_SENHA` | senha para entrar no painel |
+| `OPENAI_API_KEY` | chave da API da OpenAI (crie em platform.openai.com, menu API Keys) |
+| `OPENAI_MODEL` | opcional; modelo usado na varredura (padrão: `gpt-6.2-astra`) |
+| `BLOB_READ_WRITE_TOKEN` | criada sozinha ao ligar o armazenamento Blob (privado) ao projeto |
+
+Depois de criar ou mudar uma variável, faça um novo deploy (Deployments → Redeploy).
+
+### No computador (sem servidor)
 1. Baixe os arquivos (ou clone o repositório).
-2. Copie `chave.exemplo.js` para `chave.js` e cole a sua chave da API da OpenAI (crie em [platform.openai.com](https://platform.openai.com), menu API Keys).
+2. Copie `chave.exemplo.js` para `chave.js` e cole a sua chave da API da OpenAI.
 3. Abra `prospector-agro.html` no navegador (dois cliques).
-4. Escolha o estado, marque os alvos e clique em **Rodar varredura agora**.
 
-Os leads ficam salvos no próprio navegador (localStorage). Use **Exportar backup** para guardar uma cópia em JSON.
+Nesse modo os leads ficam só naquele navegador (localStorage). Use **Exportar backup** para guardar uma cópia em JSON — e **Importar** para levá-los para a versão online.
 
 > **Atenção:** o arquivo `chave.js` contém a sua chave e está no `.gitignore` — nunca o envie para o GitHub nem compartilhe. Cada varredura consome créditos da sua conta OpenAI.
 

@@ -328,6 +328,19 @@
   body.modo-funil .cartao-varredura > summary::after{display:block}
   body.modo-funil .filtros input[type=search]{max-width:420px}
 
+  /* ---------- nuvem / senha ---------- */
+  .nuvem{font-size:12px;color:#DCE8D2;text-shadow:0 1px 6px rgba(0,0,0,.5);display:inline-flex;align-items:center;gap:6px}
+  .nuvem::before{content:"";width:7px;height:7px;border-radius:50%;background:#AFC6A3}
+  .nuvem.ok::before{background:#7FD08A}
+  .nuvem.erro{color:#FFD9C7}.nuvem.erro::before{background:#F08A5D}
+  .nuvem:empty{display:none}
+  #modalSenha{max-width:380px}
+  #modalSenha .modal-conteudo{text-align:center}
+  #modalSenha p{color:var(--ink-soft);font-size:14px;margin-bottom:14px}
+  #modalSenha input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:16px}
+  #modalSenha .erro{color:var(--quente);font-size:13px;min-height:18px;margin:8px 0 0}
+  #modalSenha .btn{width:100%;margin-top:10px;padding:10px}
+
   /* ---------- celular ---------- */
   @media (max-width:900px){
     header{padding:18px 16px}
@@ -398,6 +411,7 @@
   <div class="logo">
     <h1>Prospector Agro</h1>
     <span>prospecção para serviços de drone agrícola</span>
+    <span class="nuvem" id="nuvem" role="status"></span>
   </div>
   <div class="acoes">
     <button class="btn claro" id="btnImportar">Importar leads</button>
@@ -568,6 +582,17 @@
   </div>
 </dialog>
 
+<!-- =============== MODAL: SENHA (versão online) =============== -->
+<dialog id="modalSenha">
+  <form class="modal-conteudo" id="formSenha">
+    <h2>Prospector Agro</h2>
+    <p>Digite a senha do painel. Ela fica guardada neste aparelho.</p>
+    <input type="password" id="campoSenha" autocomplete="current-password" required aria-label="Senha">
+    <p class="erro" id="erroSenha"></p>
+    <button class="btn" type="submit" id="btnEntrar">Entrar</button>
+  </form>
+</dialog>
+
 <div class="aviso" id="aviso" role="status"></div>
 
 <script src="chave.js"></script>
@@ -597,9 +622,19 @@ const STATUS = {
 };
 const TIPOS_CONTATO = { whatsapp:'WhatsApp', ligacao:'Ligação', visita:'Visita', email:'E-mail', outro:'Outro' };
 
+// Modo local: chave.js presente (a chave fica no computador e os leads, no navegador).
+// Modo online (Vercel): a chave fica no servidor e os leads sincronizam na nuvem, com senha.
+const MODO = (typeof API !== 'undefined' && API && API.key) ? 'local' : 'online';
+const CHAVE_SENHA = 'prospectorAgro.senha';
+const CHAVE_REMOVIDOS = 'prospectorAgro.removidos.v1';
+let senha = ''; try{ senha = localStorage.getItem(CHAVE_SENHA) || ''; }catch(e){}
+let removidos = {}; try{ removidos = JSON.parse(localStorage.getItem(CHAVE_REMOVIDOS) || '{}') || {}; }catch(e){}
+
 let leads = carregar();
 let editandoId = null;
 let visao = 'lista';
+const fotos = new Map();   // id -> última versão salva (para saber o que mudou)
+carimbar();
 
 function carregar(){
   try{
@@ -628,10 +663,97 @@ function normalizarLead(l){
   if(!Array.isArray(l.historico)) l.historico = [];
   return l;
 }
+// marca a hora em que cada lead mudou (é o que decide qual versão vale ao sincronizar)
+function carimbar(){
+  const agora = new Date().toISOString();
+  for(const l of leads){
+    const {_notasAbertas, atualizadoEm, ...resto} = l;
+    const foto = JSON.stringify(resto);
+    if(fotos.get(l.id) !== foto){ if(fotos.has(l.id) || !l.atualizadoEm) l.atualizadoEm = agora; fotos.set(l.id, foto); }
+  }
+}
+const limpos = () => leads.map(({_notasAbertas, ...resto})=>resto);
+function guardarLocal(){
+  try{
+    localStorage.setItem(CHAVE, JSON.stringify(limpos()));
+    localStorage.setItem(CHAVE_REMOVIDOS, JSON.stringify(removidos));
+  }catch(e){ avisar('Não deu para salvar no navegador — exporte um backup.'); }
+}
 function salvar(){
-  const limpo = leads.map(({_notasAbertas, ...resto})=>resto);
-  try{ localStorage.setItem(CHAVE, JSON.stringify(limpo)); }
-  catch(e){ avisar('Não deu para salvar no navegador — exporte um backup.'); }
+  carimbar();
+  guardarLocal();
+  agendarSync();
+}
+
+/* ===================== nuvem (versão online) ===================== */
+let syncTimer = null, sincronizando = false, pendente = false;
+function nuvem(texto, tipo){
+  const n = document.getElementById('nuvem'); if(!n) return;
+  n.textContent = texto || ''; n.className = 'nuvem' + (tipo ? ' ' + tipo : '');
+}
+function agendarSync(){
+  if(MODO !== 'online' || !senha) return;
+  clearTimeout(syncTimer); syncTimer = setTimeout(sincronizar, 800);
+  nuvem('Salvando…');
+}
+// mesma regra do servidor: vale a versão mais nova de cada lead
+function juntarLeads(a, b, rem){
+  const porId = new Map();
+  for(const l of [...a, ...b]){
+    if(!l || typeof l.id !== 'string' || !l.nome) continue;
+    const atual = porId.get(l.id);
+    if(!atual || String(l.atualizadoEm||'') > String(atual.atualizadoEm||'')) porId.set(l.id, l);
+  }
+  return [...porId.values()].filter(l=>!(rem[l.id] && rem[l.id] >= String(l.atualizadoEm||'')));
+}
+function aplicarDoServidor(d){
+  for(const [id, q] of Object.entries(d.removidos||{})) if(!removidos[id] || removidos[id] < q) removidos[id] = q;
+  const abertos = new Set(leads.filter(l=>l._notasAbertas).map(l=>l.id));
+  const antes = JSON.stringify(limpos());
+  leads = juntarLeads(d.leads||[], limpos(), removidos).map(normalizarLead);
+  leads.forEach(l=>{ if(abertos.has(l.id)) l._notasAbertas = true; });
+  fotos.clear(); carimbar(); guardarLocal();
+  if(JSON.stringify(limpos()) !== antes){
+    // não redesenha no meio de uma digitação
+    const foco = document.activeElement;
+    if(!(foco && foco.closest && foco.closest('#listaLeads') && /^(TEXTAREA|INPUT)$/.test(foco.tagName))) renderTudo();
+    return JSON.stringify(d.leads||[]) !== JSON.stringify(limpos());   // ainda há algo local para enviar
+  }
+  return false;
+}
+async function chamarServidor(caminho, metodo, corpo){
+  const r = await fetch(caminho, {
+    method: metodo,
+    headers: { 'content-type':'application/json', 'x-senha': senha },
+    body: corpo ? JSON.stringify(corpo) : undefined
+  });
+  const d = await r.json().catch(()=>({}));
+  if(r.status === 401){ pedirSenha('A senha mudou ou está incorreta. Entre de novo.'); }
+  if(!r.ok){ const e = new Error(d.erro || `erro HTTP ${r.status}`); e.status = r.status; throw e; }
+  return d;
+}
+async function sincronizar(){
+  if(MODO !== 'online' || !senha) return;
+  if(sincronizando){ pendente = true; return; }
+  sincronizando = true; clearTimeout(syncTimer);
+  try{
+    const d = await chamarServidor('/api/leads', 'PUT', { leads: limpos(), removidos });
+    if(aplicarDoServidor(d)) pendente = true;
+    nuvem('Salvo na nuvem', 'ok');
+  }catch(e){
+    if(e.status !== 401) nuvem(e.status ? 'Erro ao salvar na nuvem — salvo neste aparelho' : 'Sem conexão — salvo neste aparelho', 'erro');
+  }finally{
+    sincronizando = false;
+    if(pendente){ pendente = false; syncTimer = setTimeout(sincronizar, 300); }
+  }
+}
+function pedirSenha(msg){
+  senha = ''; try{ localStorage.removeItem(CHAVE_SENHA); }catch(e){}
+  nuvem('');
+  const m = document.getElementById('modalSenha');
+  document.getElementById('erroSenha').textContent = msg || '';
+  if(!m.open) m.showModal();
+  setTimeout(()=>document.getElementById('campoSenha').focus(), 50);
 }
 
 /* ===================== utilidades ===================== */
@@ -901,6 +1023,7 @@ $('#listaLeads').addEventListener('click', e=>{
   if(acao==='excluir'){
     if(confirm(`Excluir o lead “${lead.nome}”?`)){
       leads = leads.filter(l=>l.id!==lead.id);
+      removidos[lead.id] = new Date().toISOString(); fotos.delete(lead.id);
       salvar(); renderTudo(); avisar('Lead excluído.');
     }
   } else if(acao==='editar'){
@@ -1217,11 +1340,29 @@ async function chamarApi(caminho, opcoes){
 }
 
 function chaveOk(){
-  if(typeof API === 'undefined' || !API.key || API.key.includes('SUA-CHAVE')){
+  if(MODO === 'online'){ if(!senha){ pedirSenha(); return false; } return true; }
+  if(API.key.includes('SUA-CHAVE')){
     avisar('Falta a chave da API: copie chave.exemplo.js para chave.js e cole a sua chave da OpenAI.', 5000);
     return false;
   }
   return true;
+}
+// as três chamadas da varredura, direto na OpenAI (local) ou pelo servidor (online)
+function criarResposta(input, segundoPlano, formato){
+  if(MODO === 'online') return chamarServidor('/api/varredura', 'POST', { acao:'criar', input, segundoPlano, formato });
+  const corpo = { model: API.model, max_output_tokens: 16000,
+    tools: [{ type:'web_search', user_location:{ type:'approximate', country:'BR' } }], input };
+  if(segundoPlano) corpo.background = true;
+  if(formato) corpo.text = { format: formato };
+  return chamarApi('', { method:'POST', body: JSON.stringify(corpo) });
+}
+function consultarResposta(id){
+  if(MODO === 'online') return chamarServidor('/api/varredura?id=' + encodeURIComponent(id), 'GET');
+  return chamarApi('/' + encodeURIComponent(id), { method:'GET' });
+}
+function cancelarResposta(id){
+  if(MODO === 'online') return chamarServidor('/api/varredura', 'POST', { acao:'cancelar', id });
+  return chamarApi('/' + encodeURIComponent(id) + '/cancel', { method:'POST' });
 }
 
 async function rodarVarredura(){
@@ -1230,24 +1371,16 @@ async function rodarVarredura(){
   const p = coletarParametrosVarredura();
   if(!p) return;
 
-  const base = {
-    model: API.model,
-    max_output_tokens: 16000,
-    tools: [{ type:'web_search', user_location:{ type:'approximate', country:'BR' } }],
-    input: montarPromptVarredura(p)
-  };
+  const input = montarPromptVarredura(p);
+  const formato = { type:'json_schema', name:'leads', strict:true, schema:ESQUEMA_LEADS };
   // tenta o modo completo (segundo plano + formato garantido); se o modelo
   // não aceitar algum recurso, cai para uma versão mais simples
-  const tentativas = [
-    { ...base, background:true, text:{ format:{ type:'json_schema', name:'leads', strict:true, schema:ESQUEMA_LEADS } } },
-    { ...base, background:true },
-    { ...base }
-  ];
+  const tentativas = [ [true, formato], [true, null], [false, null] ];
   $('#btnRodarVarredura').disabled = true;
   statusVarredura('Enviando a varredura…');
   let resposta = null, ultimoErro = null;
-  for(const corpo of tentativas){
-    try{ resposta = await chamarApi('', { method:'POST', body: JSON.stringify(corpo) }); break; }
+  for(const [segundoPlano, fmt] of tentativas){
+    try{ resposta = await criarResposta(input, segundoPlano, fmt); break; }
     catch(err){
       ultimoErro = err;
       if(err.status !== 400) break;                       // só tenta de novo quando o recurso não é aceito
@@ -1278,7 +1411,7 @@ function acompanhar(info){
   const consultar = async ()=>{
     if(!varredura) return;
     try{
-      const r = await chamarApi('/' + encodeURIComponent(info.id), { method:'GET' });
+      const r = await consultarResposta(info.id);
       falhas = 0;
       if(r.status === 'queued' || r.status === 'in_progress'){ varredura.timer = setTimeout(consultar, 5000); return; }
       concluir(r, info);
@@ -1327,7 +1460,7 @@ async function cancelarVarredura(){
   const id = varredura.id;
   encerrar();
   avisar('Varredura cancelada.');
-  try{ await chamarApi('/' + encodeURIComponent(id) + '/cancel', { method:'POST' }); }catch(e){}
+  try{ await cancelarResposta(id); }catch(e){}
 }
 
 $('#btnRodarVarredura').addEventListener('click', rodarVarredura);
@@ -1340,13 +1473,35 @@ renderNumeros();
 // no celular, a varredura começa recolhida (os leads aparecem primeiro)
 if(matchMedia('(max-width: 900px)').matches && leads.length) $('#cartaoVarredura').open = false;
 
+// versão online: pede a senha e junta os leads deste aparelho com os da nuvem
+if(MODO === 'online'){
+  const m = document.getElementById('modalSenha');
+  m.addEventListener('cancel', e=>e.preventDefault());          // sem senha não entra
+  document.getElementById('formSenha').addEventListener('submit', async e=>{
+    e.preventDefault();
+    const btn = document.getElementById('btnEntrar'); btn.disabled = true;
+    senha = document.getElementById('campoSenha').value;
+    try{
+      const d = await chamarServidor('/api/leads', 'GET');
+      try{ localStorage.setItem(CHAVE_SENHA, senha); }catch(e){}
+      m.close(); document.getElementById('campoSenha').value = '';
+      aplicarDoServidor(d); renderTudo(); sincronizar();
+    }catch(err){
+      senha = '';
+      document.getElementById('erroSenha').textContent = err.status === 401 ? 'Senha incorreta.' : err.message;
+    }finally{ btn.disabled = false; }
+  });
+  if(senha) sincronizar(); else pedirSenha();
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') sincronizar(); });
+}
+
 // varredura que estava rodando quando a aba fechou: retoma
 (function retomar(){
   try{
     const info = JSON.parse(localStorage.getItem(CHAVE_VARREDURA)||'null');
     if(!info || !info.id) return;
     if(Date.now() - info.inicio > 6*3600*1000){ localStorage.removeItem(CHAVE_VARREDURA); return; }
-    if(typeof API === 'undefined' || !API.key) return;
+    if(MODO === 'online' && !senha) return;
     $('#cartaoVarredura').open = true;
     acompanhar(info);
   }catch(e){}

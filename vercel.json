@@ -1,0 +1,12 @@
+{
+  "rewrites": [{ "source": "/", "destination": "/prospector-agro.html" }],
+  "functions": { "api/varredura.js": { "maxDuration": 300 } },
+  "headers": [
+    { "source": "/(.*)", "headers": [
+      { "key": "X-Frame-Options", "value": "DENY" },
+      { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
+      { "key": "Referrer-Policy", "value": "no-referrer" }
+    ] },
+    { "source": "/api/(.*)", "headers": [{ "key": "Cache-Control", "value": "no-store" }] }
+  ]
+}
